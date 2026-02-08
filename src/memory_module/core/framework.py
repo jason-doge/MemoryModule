@@ -144,7 +144,7 @@ class MemoryModule:
         obs_source_file_name = f"{self.session_id}_{self.step_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         obs_source_file_path = self.data_dir / obs_source_file_name
         with open(obs_source_file_path, "w", encoding="utf-8") as f:
-            f.write(f"[{obs["obs_type"]}]\n")
+            f.write(f"[{obs['obs_type']}]\n")
             f.write(obs["obs_text"])
 
         # 获取obs_id

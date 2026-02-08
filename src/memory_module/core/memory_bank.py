@@ -449,60 +449,99 @@ class MemoryBank:
             WHERE status = 'ACTIVE'
         """)
         active_memories = self.sqlite_cursor.fetchall()
+        # 修复索引错误：row[1]是content，不是mem_type
         active_memories_dict = {row[0]: {
             "mem_id": row[0],
-            "mem_type": row[1],
-            "mem_content": row[2],
+            "mem_content": row[1],  # 修复：row[1]是content
             "context": {
-                "phase": row[3],
-                "subgoal": row[4],
-                "state_summary": row[5],
-                "source_tool": row[6],
-                "source_command": row[7],
+                "phase": row[2],           # 修复：row[2]是phase
+                "subgoal": row[3],         # 修复：row[3]是subgoal
+                "state_summary": row[4],   # 修复：row[4]是state_summary
+                "source_tool": row[5],     # 修复：row[5]是source_tool
+                "source_command": row[6],  # 修复：row[6]是source_command
             },
             "key": {
-                "mark_key": bool(row[8]),
-                "key_type": row[9],
-                "key_level": row[10],
+                "mark_key": bool(row[7]),  # 修复：row[7]是mark_key
+                "key_type": row[8],        # 修复：row[8]是key_type
+                "key_level": row[9],       # 修复：row[9]是key_level
             },
         } for row in active_memories}
 
+        # 如果没有任何活跃记忆，直接返回空列表
+        if not active_memories:
+            return []
+
         # 3. 从 Chroma 中检索记忆条目
         results = []
+        
         # 3.1 检索 key_level=0 的记忆条目
-        key_level_0_memory_ids = [row[0] for row in active_memories if row[10] == 0]
-        key_level_0_results = self.chroma_collection.query(
-            query_embeddings=[vector],
-            n_results=top_k_for_0,
-            ids=key_level_0_memory_ids,
-        )
-        key_level_0_results = list(zip(key_level_0_results["ids"][0], key_level_0_results["distances"][0]))
-        key_level_0_results = [[active_memories_dict[mem_id], dist] for mem_id, dist in key_level_0_results]
-        results.extend(key_level_0_results)
+        key_level_0_memory_ids = [row[0] for row in active_memories if row[9] == 0]  # 修复：row[9]是key_level
+        if key_level_0_memory_ids:  # 修复：只有当列表非空时才查询
+            actual_top_k_0 = min(top_k_for_0, len(key_level_0_memory_ids))  # 修复：防止n_results超过实际数量
+            try:
+                # ChromaDB的query方法：查询整个集合，然后手动过滤
+                all_results = self.chroma_collection.query(
+                    query_embeddings=[vector],
+                    n_results=min(top_k_for_0 * 3, self.chroma_collection.count()),  # 多取一些，后面过滤
+                    include=["distances"],
+                )
+                # 手动过滤出key_level=0的记忆
+                key_level_0_results = [
+                    (mem_id, dist) 
+                    for mem_id, dist in zip(all_results["ids"][0], all_results["distances"][0])
+                    if mem_id in key_level_0_memory_ids
+                ][:actual_top_k_0]  # 只取top_k个
+                
+                key_level_0_results = [[active_memories_dict[mem_id], dist] for mem_id, dist in key_level_0_results if mem_id in active_memories_dict]
+                results.extend(key_level_0_results)
+            except Exception as e:
+                print(f"[Warning] Failed to query key_level=0 memories: {e}")
 
         # 3.2 检索 key_level=1 的记忆条目
-        key_level_1_memory_ids = [row[0] for row in active_memories if row[10] == 1]
-        key_level_1_results = self.chroma_collection.query(
-            query_embeddings=[vector],
-            n_results=top_k_for_1,
-            ids=key_level_1_memory_ids,
-        )
-        key_level_1_results = list(zip(key_level_1_results["ids"][0], key_level_1_results["distances"][0]))
-        key_level_1_results = [[active_memories_dict[mem_id], dist] for mem_id, dist in key_level_1_results]
-        results.extend(key_level_1_results)
+        key_level_1_memory_ids = [row[0] for row in active_memories if row[9] == 1]  # 修复：row[9]是key_level
+        if key_level_1_memory_ids:  # 修复：只有当列表非空时才查询
+            actual_top_k_1 = min(top_k_for_1, len(key_level_1_memory_ids))  # 修复：防止n_results超过实际数量
+            try:
+                all_results = self.chroma_collection.query(
+                    query_embeddings=[vector],
+                    n_results=min(top_k_for_1 * 3, self.chroma_collection.count()),
+                    include=["distances"],
+                )
+                # 手动过滤出key_level=1的记忆
+                key_level_1_results = [
+                    (mem_id, dist) 
+                    for mem_id, dist in zip(all_results["ids"][0], all_results["distances"][0])
+                    if mem_id in key_level_1_memory_ids
+                ][:actual_top_k_1]
+                
+                key_level_1_results = [[active_memories_dict[mem_id], dist] for mem_id, dist in key_level_1_results if mem_id in active_memories_dict]
+                results.extend(key_level_1_results)
+            except Exception as e:
+                print(f"[Warning] Failed to query key_level=1 memories: {e}")
 
         # 3.3 检索 key_level=2 的记忆条目
-        key_level_2_memory_ids = [row[0] for row in active_memories if row[10] == 2]
-        top_k_for_2 = top_k_for_2 if top_k_for_2 else len(key_level_2_memory_ids)
-        top_k_for_2 = top_k_for_2 if top_k_for_2 else 1
-        key_level_2_results = self.chroma_collection.query(
-            query_embeddings=[vector],
-            n_results=top_k_for_2,
-            ids=key_level_2_memory_ids,
-        )
-        key_level_2_results = list(zip(key_level_2_results["ids"][0], key_level_2_results["distances"][0]))
-        key_level_2_results = [[active_memories_dict[mem_id], dist] for mem_id, dist in key_level_2_results]
-        results.extend(key_level_2_results)
+        key_level_2_memory_ids = [row[0] for row in active_memories if row[9] == 2]  # 修复：row[9]是key_level
+        if key_level_2_memory_ids:  # 修复：只有当列表非空时才查询
+            top_k_for_2 = top_k_for_2 if top_k_for_2 else len(key_level_2_memory_ids)
+            top_k_for_2 = max(1, top_k_for_2)  # 修复：确保至少为1
+            actual_top_k_2 = min(top_k_for_2, len(key_level_2_memory_ids))  # 修复：防止n_results超过实际数量
+            try:
+                all_results = self.chroma_collection.query(
+                    query_embeddings=[vector],
+                    n_results=min(top_k_for_2 * 3, self.chroma_collection.count()),
+                    include=["distances"],
+                )
+                # 手动过滤出key_level=2的记忆
+                key_level_2_results = [
+                    (mem_id, dist) 
+                    for mem_id, dist in zip(all_results["ids"][0], all_results["distances"][0])
+                    if mem_id in key_level_2_memory_ids
+                ][:actual_top_k_2]
+                
+                key_level_2_results = [[active_memories_dict[mem_id], dist] for mem_id, dist in key_level_2_results if mem_id in active_memories_dict]
+                results.extend(key_level_2_results)
+            except Exception as e:
+                print(f"[Warning] Failed to query key_level=2 memories: {e}")
 
         pprint(results)
 
