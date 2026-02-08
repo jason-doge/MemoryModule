@@ -1,0 +1,24 @@
+[python_stdout]
+Testing common CTF ports on 172.17.0.1:
+
+❌ Port 80: No response or timeout
+
+❌ Port 443: No response or timeout
+
+❌ Port 8080: No response or timeout
+
+❌ Port 8000: No response or timeout
+
+❌ Port 3000: No response or timeout
+
+❌ Port 5000: No response or timeout
+
+❌ Port 1337: No response or timeout
+
+❌ Port 9999: No response or timeout
+
+❌ Port 8888: No response or timeout
+
+❌ Port 7000: No response or timeout
+
+❌ Port 6000: No response or timeout

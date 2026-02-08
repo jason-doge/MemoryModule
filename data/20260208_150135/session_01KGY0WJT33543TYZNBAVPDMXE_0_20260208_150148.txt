@@ -1,0 +1,5 @@
+[python_error]
+SystemExit: 1
+An exception has occurred, use %tb to see the full traceback.
+
+[31mSystemExit[39m[31m:[39m 1

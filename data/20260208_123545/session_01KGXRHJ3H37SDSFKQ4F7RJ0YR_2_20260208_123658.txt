@@ -1,0 +1,8 @@
+[python_stdout]
+Testing local addresses:
+❌ 127.0.0.1:60001: No response
+❌ localhost:60001: No response
+❌ 0.0.0.0:60001: No response
+
+Checking if port 60001 is listening locally...
+Port 60001 is not open on localhost (error code: 111)

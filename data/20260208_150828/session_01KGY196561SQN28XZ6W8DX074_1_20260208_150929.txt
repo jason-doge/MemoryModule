@@ -1,0 +1,3 @@
+[python_display_data]
+[SYSTEM] Execution timeout after 60 seconds. Attempting to interrupt...
+[SYSTEM] Kernel interrupted. Session state preserved.
