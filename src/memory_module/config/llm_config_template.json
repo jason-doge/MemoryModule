@@ -1,0 +1,35 @@
+{
+    "chat_model": {
+        "qwen-max": {
+            "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "api_key": "sk-aaa",
+            "model_name": "qwen-max"
+        },
+        "deepseek-chat": {
+            "base_url": "https://api.deepseek.com",
+            "api_key": "sk-aaa",
+            "model_name": "deepseek-chat"
+        }
+    },
+    "embedding_model": {
+        "qwen-text-embedding-v4": {
+            "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "api_key": "sk-aaa",
+            "model_name": "text-embedding-v4",
+            "dimensions": {
+                "default": 1024,
+                "supported": [
+                    2048,
+                    1536,
+                    1024,
+                    768,
+                    512,
+                    256,
+                    128,
+                    64
+                ]
+            },
+            "max_batch_size": 10
+        }
+    }
+}

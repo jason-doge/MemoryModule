@@ -1,0 +1,174 @@
+{
+    "mem_id": "mem_000123",
+    "mem_type": "SUMMARY",
+    "content": "Target 10.0.0.5: open ports 22/ssh and 80/http. HTTP banner suggests Apache 2.4.49. Interesting paths: /admin (302), /backup.zip (200).",
+    "context": {
+      "phase": "ENUM",
+      "subgoal": "Identify interesting web paths and confirm service fingerprint",
+      "state_summary": "Previous steps have identified the target as a web server. The target has open ports 22/ssh and 80/http. The HTTP banner suggests Apache 2.4.49. The target has interesting paths: /admin (302), /backup.zip (200).",
+      "source_tool": "nmap",
+      "source_command": "nmap -sV -p- 10.0.0.5"
+    },
+    "status": "ACTIVE",
+    "provenance": {
+      "created_at_step": 7,
+      "updated_at_step": 7,
+      "created_at": "2026-01-11T14:23:12+09:00",
+      "obs_refs": ["obs_000077"],
+      "supersedes_mem_ids": []
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+  {
+    // mem_id：记忆条目唯一标识。
+    // 作用：用于检索返回、S3 更新取代时引用、以及全链路日志/审计定位。
+    "mem_id": "mem_000123",
+  
+    // mem_type：记忆类型（决定 content.raw 是否必须存在，以及后续如何使用该记忆）。
+    // 典型枚举：
+    // - "SUMMARY"：仅保存摘要事实（raw 为 null）
+    // - "RAW"：保存原始证据（raw 必须非 null），同时仍提供 summary 便于检索/规划
+    // - "MERGED"：由多条证据/旧记忆合并更新生成（summary 必须；raw 可选）
+    "mem_type": "SUMMARY",
+  
+    "content": {
+      // summary：面向规划/检索的“可用结论”文本。
+      // 作用：
+      // 1) 规划模块/蒸馏模块可直接使用，减少再次解析 raw 的成本
+      // 2) 在你删除 anchors 后，summary 也是最重要的检索信号与 S3 对齐依据
+      // 建议：尽量半结构化书写（Target/Port/Path/Param/Product/Version/Finding 等稳定模式），提高检索稳定性。
+      "summary": "Target 10.0.0.5: open ports 22/ssh and 80/http. HTTP banner suggests Apache 2.4.49. Interesting paths: /admin (302), /backup.zip (200).",
+  
+      // raw：原始证据文本（HTTP 请求/响应、HTML/JS、错误栈、WAF 页面、日志原文等）。
+      // 作用：
+      // 1) 支撑漏洞利用与 payload 构造所需的精确上下文（尤其是 LFI/XSS/SSTI 等）
+      // 2) 支撑复现与人工核验
+      // 约束：
+      // - mem_type="RAW" 时：raw 必须为非 null 字符串
+      // - mem_type="SUMMARY" 时：raw 必须为 null
+      // - mem_type="MERGED" 时：raw 可选（取决于你是否希望保留合并后的原始证据片段）
+      "raw": null
+    },
+  
+    "context": {
+      // phase：当前渗透测试阶段（例如 RECON/ENUM/VULN_VERIFY/EXPLOIT/POST/REPORT）。
+      // 作用：
+      // 1) 帮助后续检索按阶段过滤或加权（同阶段记忆通常更相关）
+      // 2) 让系统理解“该记忆产生时处于什么阶段”，便于解释与分析
+      // 3) 可作为训练/评估统计维度（各阶段记忆分布、策略偏好）
+      "phase": "ENUM",
+  
+      // subgoal：产生该记忆时的“当前子目标”。
+      // 作用：
+      // 1) 在无 anchors 情况下，为检索提供额外语义信号（同子目标的记忆更可能相关）
+      // 2) 帮助理解记忆用途（这条记忆是为哪个目的收集的）
+      // 3) 支持后续 S3 决策：如果新观测服务于同一子目标，更新/合并更合理
+      "subgoal": "Identify interesting web paths and confirm service fingerprint"
+    },
+  
+    "key": {
+      // is_key：是否为关键记忆（探索锚点）。
+      // 作用：
+      // 1) 检索加权：优先返回 key 记忆
+      // 2) 规划优先级：关键记忆应更易被蒸馏/用于下一步规划
+      // 3) 资源策略：关键记忆可以更晚归档、更少被丢弃
+      "is_key": true,
+  
+      // key_type：关键记忆类别（仅当 is_key=true 时必须填写）。
+      // 作用：给系统一个“为什么关键”的可解释标签，并支持按类型加权检索。
+      // 建议枚举：PORT / INJECTION_POINT / PATH / CREDENTIAL / VERSION / VULN_HINT
+      "key_type": "PORT",
+  
+      // key_level：关键程度（可选但推荐，通常 0/1/2）。
+      // 作用：
+      // 1) 提供更细粒度的排序与资源分配（2 比 1 更优先）
+      // 2) 比单纯二值 is_key 更稳定（减少“全都标 key”或“全不标 key”的退化）
+      "key_level": 2
+    },
+  
+    "status": {
+      // state：该记忆当前状态。
+      // 作用：
+      // 1) 控制检索与使用：例如 ARCHIVED/FROZEN 可降权或禁止更新
+      // 2) 支持 S3 的“取代但不删除”：被取代旧记忆标为 SUPERSEDED
+      // 建议枚举：ACTIVE / ARCHIVED / FROZEN / STALE / SUPERSEDED / INVALID
+      "state": "ACTIVE"
+    },
+  
+    "provenance": {
+      // created_step：该记忆在本 episode 的创建步。
+      // 作用：提供相对时间顺序（便于“新证据覆盖旧证据”的判断）。
+      "created_step": 7,
+  
+      // last_updated_step：该记忆最近一次被更新的 step（S3 更新后会变化）。
+      // 作用：判断该记忆是否“近期仍在被维护”，也利于调试/统计更新频率。
+      "last_updated_step": 7,
+  
+      // created_at：该记忆创建的绝对时间戳（ISO 8601，建议带时区）。
+      // 作用：
+      // 1) 跨 episode/跨任务的全局时间排序
+      // 2) 审计与复现（知道大致发生在什么时候）
+      // 注意：模型 A 不一定需要该字段，但存储层强烈建议保留。
+      "created_at": "2026-01-11T14:23:12+09:00",
+  
+      // source_tool：产生该观测的工具/来源（如 nmap/curl/ffuf/browser）。
+      // 作用：
+      // 1) 帮助理解内容语义（扫描结果 vs HTTP 证据 vs 错误栈）
+      // 2) 方便后续统计（不同工具带来的记忆类型分布）
+      "source_tool": "nmap",
+  
+      // source_command：产生该观测的具体命令或关键操作。
+      // 作用：
+      // 1) 复现：可以重新运行命令得到相同/相近输出
+      // 2) 可信度判断：命令参数决定结果范围（如端口范围、枚举深度等）
+      // 3) 在无 anchors 时，也提供检索线索（包含目标 IP/URL/参数）
+      "source_command": "nmap -sV -p- 10.0.0.5",
+  
+      // obs_refs：该记忆来源的原始观测引用列表（obs_id 或日志条目 ID）。
+      // 作用：
+      // 1) 可追溯：允许从记忆回溯到原始观测原文进行核验
+      // 2) 审计：摘要写错/增强跑偏时可定位源头
+      // 3) 合并：S3 更新时可把新旧 obs_refs 合并（由 executor/系统完成）
+      "obs_refs": ["obs_000077"]
+    },
+  
+    "version": {
+      // supersedes_mem_ids：当前记忆取代的旧记忆 ID 列表（用于 S3 可追溯性）。
+      // 作用：
+      // - 当本条由 S3 生成时，这里列出被取代的旧 mem_id（1..N）
+      // - 系统可据此建立“版本链”，旧记忆同时标记为 SUPERSEDED
+      // - 反向“被谁取代”可以通过扫描该字段得到，无需旧记忆存 back-pointer
+      "supersedes_mem_ids": []
+    },
+  
+    "enhancement": {
+      // enhanced：是否包含“外部补充信息”（漏洞情报/通用漏洞知识）。
+      // 作用：明确区分“观测事实（summary/raw）”与“外部知识（增强）”，避免污染 grounded 事实。
+      "enhanced": false,
+  
+      // enhance_kind：增强类型（enhanced=true 时必须填写）。
+      // - "CVE_LOOKUP"：基于产品/版本/指纹检索 CVE，并结构化写入 cve_items
+      // - "VULN_KNOWLEDGE_ONLY"：不指向具体 CVE，仅补充通用漏洞利用/验证要点
+      "enhance_kind": null,
+  
+      // query：增强触发信息（关键词/依据/检索条件）。
+      // 作用：审计与调试（为什么会查这个、查了什么），也便于复现实验。
+      "query": null,
+  
+      // cve_items：增强得到的 CVE 条目列表（通常在 CVE_LOOKUP 时使用）。
+      // 作用：把外部情报结构化存储，供规划与后续验证使用。
+      // 推荐子字段：cve_id, short_desc, affected_versions, references, confidence
+      "cve_items": []
+    }
+  }

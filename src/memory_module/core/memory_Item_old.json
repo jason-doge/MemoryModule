@@ -1,0 +1,9 @@
+{
+    "memory_id": 1234567890,
+    "created_at_step": 3,
+    "last_updated_step": 5,
+    "subgoal": "xxx(info)",
+    "tool": "xxx(info)",
+    "command": "xxx(info)",
+    "content": "xxxxxxxxxxxxxxxxxxxx"
+}

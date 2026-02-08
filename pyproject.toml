@@ -1,0 +1,16 @@
+[project]
+name = "memory_module"
+version = "0.1.0"
+description = "A memory manager for LLM driven automated penetration testing system."
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+dev = []
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}

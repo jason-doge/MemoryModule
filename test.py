@@ -1,0 +1,2 @@
+from memory_module.utils.prompt import consolidator_prompt_content
+print(consolidator_prompt_content)
