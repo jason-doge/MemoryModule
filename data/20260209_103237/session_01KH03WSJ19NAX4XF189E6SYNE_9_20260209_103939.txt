@@ -1,0 +1,21 @@
+[python_stdout]
+1. Checking Chrome debugger JSON endpoint:
+Status: 200
+JSON response has 1 items
+
+Item 0:
+  Type: page
+  URL: about:blank
+  Title: about:blank
+
+==================================================
+
+2. Checking what caido-cli actually is:
+/graphql: 200
+/graphql/: 200
+/health: 200
+  JSON response keys: ['name', 'version', 'ready']
+
+==================================================
+
+3. Looking for flag in common locations:

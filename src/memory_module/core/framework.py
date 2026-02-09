@@ -164,8 +164,9 @@ class MemoryModule:
             top_k_for_2=self.top_k_2,
         )
         retrieved_memories_1 = [pair[0] for pair in retrieved_memories_1]
+        retrieved_memory_ids_1 = [mem["mem_id"] for mem in retrieved_memories_1]
         retrieved_memories_1 = self.memory_bank.get_memories(
-            mem_ids=retrieved_memories_1,
+            mem_ids=retrieved_memory_ids_1,
         )
 
         # 决定记忆维护操作
@@ -192,9 +193,10 @@ class MemoryModule:
             top_k_for_1=self.top_k_1,
             top_k_for_2=self.top_k_2,
         )
-        retrieved_memories_2 = [pair[0] for pair in retrieved_memories_1]
+        retrieved_memories_2 = [pair[0] for pair in retrieved_memories_2]
+        retrieved_memory_ids_2 = [mem["mem_id"] for mem in retrieved_memories_2]
         retrieved_memories_2 = self.memory_bank.get_memories(
-            mem_ids=retrieved_memories_2,
+            mem_ids=retrieved_memory_ids_2,
         )
     
         # 筛选记忆

@@ -1,0 +1,24 @@
+[python_stdout]
+Testing local services:
+
+Testing Python service port 8000 (http://127.0.0.1:8000):
+
+  Error: ReadTimeout
+
+Testing Caido-cli service port 8080 (http://127.0.0.1:8080):
+  Status: 200
+  Content type: text/html
+  Content preview: <!DOCTYPE html>
+<html data-mode="dark" lang="">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,
+
+Testing Chrome debugger port 9222 (http://127.0.0.1:9222):
+  Status: 200
+  Content type: text/html; charset=UTF-8
+  Content preview: 
+
+Testing VNC server port 5901 (http://127.0.0.1:5901):
+  Error: ConnectionError

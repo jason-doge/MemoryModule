@@ -19,6 +19,74 @@
 
 图1  记忆管理模块的架构与训练方法
 
+## 仓库目录结构
+
+- `MemoryModule`
+  - `src` : 源代码
+    - `memory_module` : 记忆模块主体代码
+    - `core` : 记忆模块核心代码
+      - `framework.py` : 记忆模块的整体逻辑, 实现了 `MemoryModule` 类
+      - `memory_bank.py` : 记忆库, 实现了 `MemoryBank` 类
+      - `memory_maintainer.py` : 记忆维护模块, 实现了 `MemoryMaintainer` 类
+      - `memory_consolidator.py` : 记忆整理模块, 实现了 `MemoryConsolidator` 类
+    - `utils` : 工具类
+      - `model.py` : 模型类, 包括 `ChatModel` `EmbeddingModel` 两个类
+      - `prompt.py` : 读取 `prompts/` 目录中的提示词`
+    - `prompts` : 提示词
+      - `prompt-model-A.md` : 记忆维护的策略选择阶段的提示词
+      - `prompt-model-Aplus.md` : 记忆维护的记忆条目内容生成阶段的提示词
+      - `prompt-model-B.md` : 记忆整理的筛选阶段的提示词
+      - `prompt-model-Bplus.md` : 记忆整理的格式化记忆内容整理阶段的提示词
+    - `config` : 用于配置的代码
+      - `llm_config.py` : LLM 配置文件, 用于配置 LLM 的 API
+      - `llm_config_template.json` : LLM 配置模板
+    - `__init__.py` : 暴露了 `MemoryModule` `MemoryBank` `MemoryMaintainer` `MemoryConsolidator` `ChatModel` `EmbeddingModel` 几个类用于调用
+  - `data` : 用于调试的数据集和调试过程的数据
+    - `final_label` : [渗透测试轨迹数据](https://github.com/ct5ctl/2601_pentest_memory_data), 可用于调试代码
+    - `yyyymmdd_hhmmss` : 调试过程的观测 / 工具输出结果原文, 每个以 `<session_id>_<step_id>_<时间>.txt` 的文件名命名 (目前尚未完成会话暂停和恢复)
+  - `database` : 存储记忆的数据库
+    - `yyyy-mm-dd_hh-mm-ss` : 单次运行的数据库 (记忆库)
+      - `chroma` : 记忆条目的向量数据库 (待记忆原文和记忆元数据拼接后生成 embedding, 不建议从这里获取记忆条目内容)
+      - `sqlite.db` : 记忆条目的数据库 (包括记忆条目的内容、元数据)
+  - `images` : `README.md` 中所展示的图片
+  - `offline_running.py` : 使用 data/final_label/ 目录中的数据集对代码进行调试
+  - `session.json` : 会话 ID 和数据库文件路径 (目前尚未完成会话暂停和恢复)
+  - `pyproject.toml` : 项目依赖包配置文件 (尚未写好)
+  - `README.md` : 仓库说明
+
+其他未提及文件是老版本遗留文件和代码或者用于调试和测试的文件
+
+## 运行方式
+
+记忆模块设计为一个可嵌入的模块, 本身没有完整的运行方式, 可以在其他代码中调用记忆模块的 API
+
+也可以使用 `offline_running.py` 脚本使用预先构建的数据集对记忆模块的代码进行调试
+
+首先安装如下依赖包:
+
+```bash
+pip install sqlite
+pip install chromadb
+pip install openai
+pip install pathlib
+```
+
+运行如下代码以可编辑模式安装记忆模块 (尚未完成 `pyproject.toml` 的依赖配置, 请自行添加依赖):
+
+```bash
+pip install -e .
+```
+
+在工作目录或 `~/.config/memory_module/` 中创建一个配置文件 `llm_config.py`，并填写对应的 API 密钥，格式参考 `src/config/llm_config_template.json`。
+
+然后可以通过如下代码导入记忆模块:
+
+```pyton
+from memory_module import MemoryModule
+```
+
+`MemoryModule` 类使用方式请参考 `offline_running.py` 脚本，该脚本展示了如何使用 `MemoryModule` 类处理渗透测试的工具输出。
+
 ## 技术路线
 
 当前LLM驱动的渗透测试系统在记忆管理方面存在关键信息遗忘、信息冗余及记忆冲突等问题，导致系统在规划时出现动作循环重复、忽视测试中暴露的潜在攻击面等现象，进而影响渗透测试的完成度。本论文旨在构建一个嵌入自动化渗透测试系统的记忆管理模块，该模块专门用于维护渗透测试记忆，为系统的规划和动作生成提供高质量上下文。

@@ -1,0 +1,39 @@
+[python_stdout]
+Exploring http://127.0.0.1:8080 in detail:
+
+Main page status: 200
+Main page headers:
+{
+  "content-length": "4090",
+  "connection": "close",
+  "content-type": "text/html",
+  "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+  "date": "Wed, 28 Jan 2026 06:47:26 GMT"
+}
+
+Saved HTML to /tmp/caido_page.html (first 1000 chars):
+<!DOCTYPE html>
+<html data-mode="dark" lang="">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <link rel="icon" href="./assets/favicon-Cw67QAUK.ico" />
+    <title>Caido</title>
+    <script type="importmap">{
+  "imports": {
+    "vue": "./shared-runtime/vue.js",
+    "@codemirror/view": "./shared-runtime/@codemirror/view.js",
+    "@codemirror/state": "./shared-runtime/@codemirror/state.js",
+    "@codemirror/autocomplete": "./shared-runtime/@codemirror/autocomplete.js",
+    "@codemirror/commands": "./shared-runtime/@codemirror/commands.js",
+    "@codemirror/lint": "./shared-runtime/@codemirror/lint.js",
+    "@codemirror/search": "./shared-runtime/@codemirror/search.js",
+    "@codemirror/language": "./shared-runtime/@codemirror/language.js",
+    "@lezer/common": "./shared-runtime/@lezer/common.js",
+    "@lezer/highlight": "./shared-runtime/@lezer/highlight.js",
+
+
+==================================================
+
+Checking for common endpoints:

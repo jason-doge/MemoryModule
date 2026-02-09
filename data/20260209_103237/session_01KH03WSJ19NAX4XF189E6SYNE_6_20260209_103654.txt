@@ -1,0 +1,88 @@
+[python_stdout]
+Checking listening ports with ss:
+Listening ports:
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                             
+LISTEN 0      100        127.0.0.1:33419      0.0.0.0:*    users:(("python3",pid=637,fd=30))  
+LISTEN 0      100        127.0.0.1:43649      0.0.0.0:*    users:(("python3",pid=637,fd=39))  
+LISTEN 0      100        127.0.0.1:49889      0.0.0.0:*    users:(("python3",pid=637,fd=25))  
+LISTEN 0      100        127.0.0.1:36999      0.0.0.0:*    users:(("python3",pid=637,fd=9))   
+LISTEN 0      100        127.0.0.1:59641      0.0.0.0:*    users:(("python3",pid=637,fd=13))  
+LISTEN 0      100        127.0.0.1:43317      0.0.0.0:*    users:(("python3",pid=637,fd=11))  
+LISTEN 0      5            0.0.0.0:5901       0.0.0.0:*    users:(("Xtigervnc",pid=193,fd=9)) 
+LISTEN 0      10         127.0.0.1:9222       0.0.0.0:*    users:(("chrome",pid=330,fd=96))   
+LISTEN 0      2048         0.0.0.0:8000       0.0.0.0:*    users:(("python3",pid=299,fd=6))   
+LISTEN 0      128          0.0.0.0:8080       0.0.0.0:*    users:(("caido-cli",pid=262,fd=31))
+LISTEN 0      5               [::]:5901          [::]:*    users:(("Xtigervnc",pid=193,fd=10))
+
+
+==================================================
+
+Checking current directory contents in detail:
+Root directory:
+total 84
+drwxr-xr-x   1 root   root   4096 Jan 28 14:40 .
+drwxr-xr-x   1 root   root   4096 Jan 28 14:40 ..
+-rwxr-xr-x   1 root   root      0 Jan 28 14:40 .dockerenv
+lrwxrwxrwx   1 root   root      7 Apr 22  2024 bin -> usr/bin
+drwxr-xr-x   2 root   root   4096 Apr  8  2024 bin.usr-is-merged
+drwxr-xr-x   2 root   root   4096 Apr 22  2024 boot
+drwxr-xr-x   5 root   root    340 Jan 28 14:40 dev
+-rwxrwxr-x   1 ubuntu ubuntu 3268 Jan 18 11:06 entrypoint.sh
+drwxr-xr-x   1 root   root   4096 Jan 28 14:40 etc
+drwxr-xr-x   1 root   root   4096 Oct  1 10:10 home
+lrwxrwxrwx   1 root   root      7 Apr 22  2024 lib -> usr/lib
+drwxr-xr-x   2 root   root   4096 Nov 14  2024 lib.usr-is-merged
+lrwxrwxrwx   1 root   root      9 Apr 22  2024 lib64 -> usr/lib64
+drwxr-xr-x   2 root   root   4096 Oct  1 10:03 media
+drwxr-xr-x   2 root   root   4096 Oct  1 10:03 mnt
+drwxr-xr-x   1 ubuntu ubuntu 4096 Jan 28 14:40 opt
+-rw-r--r--   1 root   root     23 Jan 18 11:26 pp
+dr-xr-xr-x 415 root   root      0 Jan 28 14:40 proc
+drwx------   1 root   root   4096 Dec  5 00:35 root
+drwxr-xr-x   1 root   root   4096 Nov  7 22:29 run
+lrwxrwxrwx   1 root   root      8 Apr 22  2024 sbin -> usr/sbin
+drwxr-xr-x   2 root   root   4096 Apr  8  2024 sbin.usr-is-merged
+drwxr-xr-x   2 root   root   4096 Oct  1 10:03 srv
+dr-xr-xr-x  13 root   root      0 Jan 28 14:40 sys
+drwxrwxrwt   1 root   root   4096 Jan 28 14:44 tmp
+drwxr-xr-x   1 root   root   4096 Oct  1 10:03 usr
+drwxr-xr-x   1 root   root   4096 Nov  7 22:28 var
+
+
+==================================================
+
+Checking for any web-related files or services:
+
+Contents of /opt:
+total 20
+drwxr-xr-x 1 ubuntu ubuntu 4096 Jan 28 14:40 .
+drwxr-xr-x 1 root   root   4096 Jan 28 14:40 ..
+drwxrwxr-x 3 ubuntu ubuntu 4096 Jan 18 11:06 claude_code
+drwxr-xr-x 1 ubuntu ubuntu 4096 Jan 18 11:23 service
+drwxr-xr-x 1 ubuntu ubuntu 4096 Dec  5 00:00 toolset
+
+
+==================================================
+
+Checking processes:
+Running processes (first 20 lines):
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+ubuntu         1  0.0  0.0   4324   504 ?        Ss   14:40   0:00 /bin/bash /entrypoint.sh
+ubuntu       192  0.0  0.1  16308  5580 ?        Ss   14:41   0:00 /usr/bin/perl /usr/bin/vncserver :0 -rfbport 5901 -geometry 1920x1080 -depth 24 -localhost no -xstartup /usr/bin/startxfce4
+ubuntu       193  0.0  2.1 239024 84048 ?        Ss   14:41   0:00 /usr/bin/Xtigervnc :0 -localhost=0 -desktop 97e61c354be1:0 (ubuntu) -rfbport 5901 -PasswordFile /tmp/tigervnc.YIa9Wz/passwd -SecurityTypes VncAuth,TLSVnc -auth /home/ubuntu/.Xauthority -geometry 1920x1080 -depth 24
+ubuntu       194  0.0  1.7 553624 70584 ?        Ssl  14:41   0:00 xfce4-session
+ubuntu       207  0.0  0.0   8160   816 ?        S    14:41   0:00 /usr/bin/dbus-launch --sh-syntax --exit-with-session xfce4-session
+ubuntu       208  0.0  0.0   9424  1224 ?        Ss   14:41   0:00 /usr/bin/dbus-daemon --syslog --fork --print-pid 5 --print-address 7 --session
+ubuntu       210  0.0  0.1 382912  5640 ?        Sl   14:41   0:00 /usr/libexec/at-spi-bus-launcher
+ubuntu       216  0.0  0.0   9292  2440 ?        S    14:41   0:00 /usr/bin/dbus-daemon --config-file=/usr/share/defaults/at-spi2/accessibility.conf --nofork --print-address 11 --address=unix:path=/home/ubuntu/.cache/at-spi/bus_0
+ubuntu       227  0.0  0.1 236044  5240 ?        Sl   14:41   0:00 /usr/libexec/at-spi2-registryd --use-gnome-session
+ubuntu       262  0.2  2.9 1033132 118664 ?      Sl   14:41   0:00 caido-cli --no-sync --no-open --allow-guests --listen 0.0.0.0:8080
+ubuntu       297  0.3  4.8 34200876 193248 ?     Sl   14:41   0:01 chrome --no-sandbox --app=http://localhost:8080/ --user-data-dir=/home/ubuntu/.config/chromium-caido --test-type --window-position=200,200 --window-size=1200,800
+ubuntu       298  0.0  0.6  39532 26320 ?        S    14:41   0:00 python3 /opt/service/browser.py --port 9222
+ubuntu       299  0.7  2.9 441640 115964 ?       Sl   14:41   0:02 python3 /opt/service/python_executor_mcp.py --port 8000
+ubuntu       301  0.0  0.0 33568320 1656 ?       Sl   14:41   0:00 /home/ubuntu/.cache/ms-playwright/chromium-1187/chrome-linux/chrome_crashpad_handler --monitor-self --monitor-self-annotation=ptype=crashpad-handler --database=/home/ubuntu/.config/chromium/Crash Reports --annotation=lsb-release=Ubuntu 24.04.3 LTS --annotation=plat=Linux --annotation=prod=Chrome_Linux --annotation=ver=140.0.7339.16 --initial-client-fd=5 --shared-client-connection
+ubuntu       303  0.0  0.0 33560108 324 ?        S    14:41   0:00 /home/ubuntu/.cache/ms-playwright/chromium-1187/chrome-linux/chrome_crashpad_handler --no-periodic-tasks --monitor-self-annotation=ptype=crashpad-handler --database=/home/ubuntu/.config/chromium/Crash Reports --annotation=lsb-release=Ubuntu 24.04.3 LTS --annotation=plat=Linux --annotation=prod=Chrome_Linux --annotation=ver=140.0.7339.16 --initial-client-fd=4 --shared-client-connection
+ubuntu       306  0.0  1.4 34134156 57088 ?      S    14:41   0:00 /home/ubuntu/.cache/ms-playwright/chromium-1187/chrome-linux/chrome --type=zygote --no-zygote-sandbox --no-sandbox --crashpad-handler-pid=301 --enable-crash-reporter=, --user-data-dir=/home/ubuntu/.config/chromium-caido --change-stack-guard-on-fork=enable
+ubuntu       307  0.0  1.4 34134160 56892 ?      S    14:41   0:00 /home/ubuntu/.cache/ms-playwright/chromium-1187/chrome-linux/chrome --type=zygote --no-sandbox --crashpad-handler-pid=301 --enable-crash-reporter=, --user-data-dir=/home/ubuntu/.config/chromium-caido --change-stack-guard-on-fork=enable
+ubuntu       308  0.3  1.9 1060372 76816 ?       Sl   14:41   0:01 /home/ubuntu/.local/lib/python3.12/site-packages/playwright/driver/node /home/ubuntu/.local/lib/python3.12/site-packages/playwright/driver/package/cli.js run-driver
+ubuntu       330  0.1  4.6 34166260 185000 ?     Ssl  14:41   0:00 /home/ubuntu/.cache/ms-playwright/chromium-1187/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --no-sandbox --proxy-server=http://localhost:8080 --proxy-bypass-list=localhost;127.0.0.1;*.google.com;*.google.com.hk;*.googleapis.com;*.gvt1.com;*.gvt1-cn.com;*.gstatic.com;*.ggpht.com;<-loopback> --remote-debugging-port=9222 --user-data-dir=/tmp/playwright_chromiumdev_profile-GvjTnn --remote-debugging-pipe --no-startup-window

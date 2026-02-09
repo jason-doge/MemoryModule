@@ -1,0 +1,65 @@
+[python_stdout]
+1. Checking health endpoint in detail:
+Health endpoint data: {
+  "name": "caido",
+  "version": "0.52.0",
+  "ready": true
+}
+
+==================================================
+
+2. Trying GraphQL introspection:
+GraphQL introspection status: 200
+GraphQL introspection successful!
+Found 809 GraphQL types
+
+==================================================
+
+3. Trying simple GraphQL queries:
+Query 1 succeeded: {
+  "data": {
+    "__typename": "QueryRoot"
+  }
+}
+Query 2 returned: {
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field \"flag\" on type \"QueryRoot\".",
+      "locations": [
+        {
+          "line": 1,
+          "column": 9
+        }
+      ]
+    }
+  ]
+}
+Query 3 returned: {
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field \"ctf\" on type \"QueryRoot\".",
+      "locations": [
+        {
+          "line": 1,
+          "column": 9
+        }
+      ]
+    }
+  ]
+}
+Query 5 returned: {
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field \"flags\" on type \"QueryRoot\".",
+      "locations": [
+        {
+          "line": 1,
+          "column": 9
+        }
+      ]
+    }
+  ]
+}

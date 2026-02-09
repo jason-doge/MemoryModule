@@ -1,0 +1,27 @@
+[python_stdout]
+Getting full GraphQL schema to analyze...
+Query type: QueryRoot
+Mutation type: MutationRoot
+Subscription type: SubscriptionRoot
+
+Available queries (72):
+
+Found 1 potentially interesting queries:
+  - authenticationState: None
+
+Searching for types containing 'flag':
+No types found with 'flag' in name
+
+Searching for mutation types:
+Available mutations (133):
+Found 56 potentially interesting mutations:
+  - createAssistantSession: None
+  - deleteAssistantSession: None
+  - deleteAutomateEntries: None
+  - createAutomateSession: None
+  - deleteAutomateSession: None
+  - updateAutomateSession: None
+  - deleteBackup: None
+  - createBackup: None
+  - deleteBrowser: None
+  - updateBrowser: None

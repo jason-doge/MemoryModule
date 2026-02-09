@@ -72,11 +72,11 @@ for file in data_dir.glob("*.json"):
     print('=' * 50)
     print(file)
     memory_module = MemoryModule(
-        chat_model="qwen-max",
-        maintainer_model_policy="qwen-max",
-        maintainer_model_content="qwen-max",
-        consolidator_model_policy="qwen-max",
-        consolidator_model_content="qwen-max",
+        chat_model="deepseek-chat",
+        maintainer_model_policy="deepseek-chat",
+        maintainer_model_content="deepseek-chat",
+        consolidator_model_policy="deepseek-chat",
+        consolidator_model_content="deepseek-chat",
         embedding_model="text-embedding-v4",
         step_id=0,
         session_id=None,
