@@ -59,7 +59,15 @@ class MemoryConsolidator:
         data = {
             "context": context,
             "obs": obs,
-            "retrieved_memories": retrieved_memories,
+            "retrieved_memories": [
+                {
+                    "mem_id": mem["mem_id"],
+                    "mem_type": mem["mem_type"],
+                    "mem_content": mem["mem_content"],
+                    "context": mem["context"],
+                    "key": mem["key"],
+                } for mem in retrieved_memories
+            ],
         }
         retrieved_memories_ids = [mem["mem_id"] for mem in retrieved_memories]
         # 策略模型生成筛选结果
@@ -67,7 +75,9 @@ class MemoryConsolidator:
             INPUT_JSON=json.dumps(data, ensure_ascii=False)
         )
         return_memories, completion = self.policy_model.chat(prompt_text, json_mode=True)
-        print(f"Filtered: {completion.choices[0].message.content}")
+        print("[consolidator]" + "*" * 50)
+        print(completion.choices[0].message.content)
+        print("[consolidator]" + "*" * 50)
 
         return_memory_ids = [mem["mem_id"] for mem in return_memories["memories"]]
 
@@ -85,7 +95,7 @@ class MemoryConsolidator:
         # (2) 检查是否在记忆库中
         # 将return_memories转换为完整的记忆条目
         try:
-            return_complete_memories = self.memory_bank.get_memories(return_memory_ids)
+            return_complete_memories = self.memory_bank.get_memories(return_memory_ids, mode="middle")
         except Exception as e:
             print(f"Error: {e}")
             return_complete_memories = []
@@ -108,7 +118,7 @@ class MemoryConsolidator:
         context: Dict,
         obs: Any,
         selected_memories: List[Dict],
-    ) -> tuple[dict, str]:
+    ) -> Dict:
         """
         整理记忆条目, 生成格式化的文本
         """
@@ -116,15 +126,23 @@ class MemoryConsolidator:
         data = {
             "context": context,
             "obs": obs,
-            "selected_memories": selected_memories,
+            "selected_memories": [
+                {
+                    "mem_id": mem["mem_id"],
+                    "mem_type": mem["mem_type"],
+                    "mem_content": mem["mem_content"],
+                    "context": mem["context"],
+                    "key": mem["key"],
+                } for mem in selected_memories
+            ],
         }
         prompt_text = self.prompt_content.format(
             INPUT_JSON=json.dumps(data, ensure_ascii=False)
         )
         return_dict, completion = self.general_model.chat(prompt_text, json_mode=True)
         print(f"Formatted: {completion.choices[0].message.content}")
-        return_text = json.dumps(return_dict, ensure_ascii=False)
-        return return_dict, return_text
+        # return_text = json.dumps(return_dict, ensure_ascii=False)
+        return return_dict
         
         
 

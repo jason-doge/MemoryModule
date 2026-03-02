@@ -34,7 +34,8 @@
       - `prompt.py` : 读取 `prompts/` 目录中的提示词`
     - `prompts` : 提示词
       - `prompt-model-A.md` : 记忆维护的策略选择阶段的提示词
-      - `prompt-model-Aplus.md` : 记忆维护的记忆条目内容生成阶段的提示词
+      - `prompt-model-A-SUMMARIZE.md` : 记忆维护的记忆条目内容生成阶段 SUMMARIZE_ADD 操作的提示词
+      - `prompt-model-A-UPDATE.md` : 记忆维护的记忆条目内容生成阶段 UPDATE_REPLACE 操作的提示词
       - `prompt-model-B.md` : 记忆整理的筛选阶段的提示词
       - `prompt-model-Bplus.md` : 记忆整理的格式化记忆内容整理阶段的提示词
     - `config` : 用于配置的代码
@@ -68,6 +69,8 @@
 pip install sqlite
 pip install chromadb
 pip install openai
+pip install modelscope
+pip install tiktoken
 pip install pathlib
 ```
 
@@ -77,7 +80,27 @@ pip install pathlib
 pip install -e .
 ```
 
-在工作目录或 `~/.config/memory_module/` 中创建一个配置文件 `llm_config.py`，并填写对应的 API 密钥，格式参考 `src/config/llm_config_template.json`。
+在工作目录或 `~/.config/memory_module/` 中创建一个配置文件 `llm_config.py`，并填写对应的 API 密钥，格式参考 `src/config/llm_config_template.json`, 可以使用如下 Python 脚本查看配置文件的内容。
+
+```python
+from memory_module.config.llm_config import llm_config_template
+print(llm_config_template)
+```
+
+对于 chat 模型而言, 需要填写如下字段:
+- `max_context_tokens` 字段用于指明 chat 模型处理的最大文本长度, 填写一个正整数即可，默认 262144
+  - 强烈建议填写这个字段, 因为默认值使用的是当前开源模型中上下文长度较大的模型的值
+  - 代码会根据部分开源模型的分词器估测输入文本的tokens，而不会精确计算
+  - 可能会在未填满上下文窗口时就截断输入文本, 避免超出上下文窗口或上下文内容过长
+
+对于 embedding 模型而言, 需要填写如下字段:
+- `dimensions` 字段用于指明 embedding 模型生成的维度. 该字段支持两种填写方式:
+  - 方式一: 直接填写 embedding 模型生成的维度
+  - 方式二: 包含 `default` (正整数值) 和 `supported` (正整数值列表) 两个字段的 JSON 对象, 两个字段选择其一填写即可运行, 两者都填写时, `default` 字段优先级高于 `supported` 字段
+- `max_batch_size` 字段用于指明 embedding 模型的 API 一次处理的最大批量大小, 填写一个正整数即可
+  - 实际的记忆模块代码中应该不存在批量处理的需求, 因此该字段可以不填写, 默认值为 10
+- `max_context_tokens` 字段用于指明 embedding 模型处理的最大文本长度, 填写一个正整数即可，默认 8192
+  - 代码会根据部分开源模型的分词器估测输入文本的tokens，而不会精确计算
 
 然后可以通过如下代码导入记忆模块:
 
@@ -86,6 +109,13 @@ from memory_module import MemoryModule
 ```
 
 `MemoryModule` 类使用方式请参考 `offline_running.py` 脚本，该脚本展示了如何使用 `MemoryModule` 类处理渗透测试的工具输出。
+
+由于该模块在运行时需要使用 `modelscope` 包利用 DeepSeek、Qwen、LlaMA 等开源模型的分词器估计输入文本的 token 数, 在首次运行时需要下载三个模型的分词器, 建议先运行如下代码下载分词器:
+
+```python
+from memory_module.utils.count_tokens import count_tokens
+count_tokens("Hello, world!")
+```
 
 ## 技术路线
 

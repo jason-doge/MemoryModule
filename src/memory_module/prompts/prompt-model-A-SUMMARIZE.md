@@ -10,30 +10,41 @@
 目标：在保留关键原文细节的同时，降低记忆长度与冗余，提高检索与规划效率。
 
 # 2) 输入
-你将收到一段渗透测试工具的输出原文（obs_text），可能很长，包含噪声和冗余信息。
+你将收到一个JSON对象，包含一段渗透测试工具的输出原文（obs_text），可能很长，包含噪声和冗余信息。
 
-输入格式：纯文本字符串（工具输出原文）
+输入格式：一个JSON对象，包含以下内容:
+- `context`: 当前步骤的上下文信息
+  - `phase`: 当前渗透测试阶段
+  - `subgoal`: 当前子目标
+  - `state_summary`: 近期状态摘要
+  - `source_tool`: 产生当前输出的工具
+  - `source_command`: 产生当前输出的命令或代码
+- `obs`: 渗透测试观测
+  - `obs_type`: 输出来源（如：stdout/stderr/tool/system等，system 表示来自系统日志而非工具输出）
+  - `obs_text`: 渗透测试观测的原文
 
 # 3) 输出格式（严格 JSON）
 你必须输出一个 JSON 对象，包含以下字段：
 
 ```json
-{
+{{
   "overall_summary": "对整个观测的完整总结（2-5句话，概括核心发现和价值）",
   "segments": [
-    {
+    {{
       "type": "raw",
       "content": "保留的原文段落（有信息/有用的部分）",
       "reason": "为什么保留此原文（1句话说明其价值）"
-    },
-    {
+    }},
+    {{
       "type": "summary",
       "content": "摘要化的内容（对无用/冗余部分的简短概括）",
       "reason": "为什么摘要此部分（1句话说明为何不需要原文）"
-    }
+    }}
   ]
-}
+}}
 ```
+
+不得输出任何多余字段；不得在 JSON 之外输出任何解释文本；不得将 JSON 包裹在 Markdown 代码块等其他符号中。
 
 ## 3.1 字段说明
 - `overall_summary`：对整个观测的完整总结，2-5句话，概括核心发现、关键信息和对后续渗透测试的价值。
@@ -69,6 +80,7 @@
 - 原文段不要过长，如果某部分原文超过 50 行，考虑是否可以进一步拆分或部分摘要化。
 
 # 5) 示例
+**注**: 所有示例输入只包含 `obs_text`，不包含其他部分。
 
 ## 示例 1：端口扫描（nmap）
 
@@ -92,26 +104,26 @@ Nmap done: 1 IP address (1 host up) scanned in 45.23 seconds
 
 ### 输出：
 ```json
-{
+{{
   "overall_summary": "目标主机 10.0.0.5 开放 5 个端口：SSH (22)、HTTP (80/443)、MySQL (3306) 和 Squid 代理 (8080)。操作系统为 Ubuntu Linux，Apache 版本 2.4.41，MySQL 版本 5.7.40。这些服务版本信息为后续漏洞探测提供了明确目标。",
   "segments": [
-    {
+    {{
       "type": "summary",
       "content": "Nmap 7.94 扫描开始，目标主机 10.0.0.5 存活，延迟 0.0012s，65530 个端口关闭。",
       "reason": "工具启动信息和统计数据，无需保留原文。"
-    },
-    {
+    }},
+    {{
       "type": "raw",
       "content": "PORT      STATE SERVICE     VERSION\n22/tcp    open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)\n80/tcp    open  http        Apache httpd 2.4.41 ((Ubuntu))\n443/tcp   open  ssl/http    Apache httpd 2.4.41 ((Ubuntu))\n3306/tcp  open  mysql       MySQL 5.7.40-0ubuntu0.18.04.1\n8080/tcp  open  http-proxy  Squid http proxy 4.10\nService Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel",
       "reason": "开放端口、服务名和版本信息是后续漏洞探测的关键锚点，必须保留原文。"
-    },
-    {
+    }},
+    {{
       "type": "summary",
       "content": "扫描完成，耗时 45.23 秒。",
       "reason": "扫描结束信息和时间统计，无需保留原文。"
-    }
+    }}
   ]
-}
+}}
 ```
 
 ## 示例 2：目录枚举（ffuf）
@@ -151,26 +163,26 @@ upload                  [Status: 301, Size: 311, Words: 20, Lines: 10, Duration:
 
 ### 输出：
 ```json
-{
+{{
   "overall_summary": "目录枚举发现 8 个有效路径：admin、api、backup、config、images、index.php、login、upload。其中 api、index.php、login 可直接访问（200），admin、images、upload 存在重定向（301），backup 和 config 被禁止访问（403）。这些路径为后续漏洞探测提供了攻击面。",
   "segments": [
-    {
+    {{
       "type": "summary",
       "content": "ffuf v2.0.0-dev 启动，使用 GET 方法，字典 common.txt，40 线程，匹配状态码 200/301/302/403。",
       "reason": "工具 banner 和配置信息，无需保留原文。"
-    },
-    {
+    }},
+    {{
       "type": "raw",
       "content": "admin                   [Status: 301, Size: 310, Words: 20, Lines: 10, Duration: 5ms]\napi                     [Status: 200, Size: 1523, Words: 245, Lines: 45, Duration: 8ms]\nbackup                  [Status: 403, Size: 275, Words: 20, Lines: 10, Duration: 3ms]\nconfig                  [Status: 403, Size: 275, Words: 20, Lines: 10, Duration: 4ms]\nimages                  [Status: 301, Size: 311, Words: 20, Lines: 10, Duration: 2ms]\nindex.php               [Status: 200, Size: 5234, Words: 892, Lines: 156, Duration: 12ms]\nlogin                   [Status: 200, Size: 2341, Words: 412, Lines: 78, Duration: 6ms]\nupload                  [Status: 301, Size: 311, Words: 20, Lines: 10, Duration: 3ms]",
       "reason": "发现的路径、状态码和响应大小是后续探测的关键信息，必须保留原文。"
-    },
-    {
+    }},
+    {{
       "type": "summary",
       "content": "扫描完成，共测试 4614 个路径，速率 1250 req/sec，耗时 4 秒，无错误。",
       "reason": "进度和统计信息，无需保留原文。"
-    }
+    }}
   ]
-}
+}}
 ```
 
 ## 示例 3：SQL 注入测试（sqlmap）
@@ -179,7 +191,7 @@ upload                  [Status: 301, Size: 311, Words: 20, Lines: 10, Duration:
 ```
         ___
        __H__
- ___ ___[.]_____ ___ ___  {1.7.2#stable}
+ ___ ___[.]_____ ___ ___  {{1.7.2#stable}}
 |_ -| . [)]     | .'| . |
 |___|_  [']_|_|_|__,|  _|
       |_|V...       |_|   https://sqlmap.org
@@ -233,41 +245,41 @@ back-end DBMS: MySQL >= 5.1
 
 ### 输出：
 ```json
-{
+{{
   "overall_summary": "确认 username 参数存在 SQL 注入漏洞，后端数据库为 MySQL >= 5.1。发现三种注入类型：error-based、time-based blind 和 UNION query。Web 技术栈为 Apache 2.4.41 + PHP 7.4.3。已获得可用的注入 payload，可进行进一步数据提取。",
   "segments": [
-    {
+    {{
       "type": "summary",
       "content": "sqlmap 1.7.2 启动，开始测试目标 URL，检测 WAF/IPS，确认目标内容稳定。",
       "reason": "工具 banner 和初始化信息，无需保留原文。"
-    },
-    {
+    }},
+    {{
       "type": "summary",
       "content": "测试 username 参数动态性，参数不动态但启发式测试显示可能可注入（MySQL）。开始测试多种注入技术：boolean-based、error-based、time-based、UNION query 等。",
       "reason": "测试过程的中间步骤，可摘要化。"
-    },
-    {
+    }},
+    {{
       "type": "raw",
       "content": "[10:45:27] [INFO] POST parameter 'username' is 'MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)' injectable\n[10:45:38] [INFO] POST parameter 'username' appears to be 'MySQL >= 5.0.12 AND time-based blind (query SLEEP)' injectable\n[10:45:42] [INFO] target URL appears to be UNION injectable with 3 columns\n[10:45:43] [INFO] POST parameter 'username' is 'Generic UNION query (NULL) - 1 to 20 columns' injectable",
       "reason": "确认的注入类型和技术是关键发现，必须保留原文。"
-    },
-    {
+    }},
+    {{
       "type": "raw",
       "content": "Parameter: username (POST)\n    Type: error-based\n    Title: MySQL >= 5.1 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (EXTRACTVALUE)\n    Payload: username=test' AND EXTRACTVALUE(1,CONCAT(0x5c,0x7176786a71,(SELECT (ELT(1=1,1))),0x7178766271))-- -&password=test\n\n    Type: time-based blind\n    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)\n    Payload: username=test' AND (SELECT 1 FROM (SELECT(SLEEP(5)))a)-- -&password=test\n\n    Type: UNION query\n    Title: Generic UNION query (NULL) - 3 columns\n    Payload: username=test' UNION ALL SELECT NULL,CONCAT(0x7176786a71,0x4a6b7a6e6c6b6e6a6b,0x7178766271),NULL-- -&password=test",
       "reason": "具体的注入 payload 是后续利用的关键信息，必须保留原文。"
-    },
-    {
+    }},
+    {{
       "type": "raw",
       "content": "web application technology: Apache 2.4.41, PHP 7.4.3\nback-end DBMS: MySQL >= 5.1",
       "reason": "技术栈和数据库版本信息是重要的指纹信息，必须保留原文。"
-    },
-    {
+    }},
+    {{
       "type": "summary",
       "content": "共发送 156 个 HTTP 请求，结果已保存到 /root/.local/share/sqlmap/output/10.0.0.5，测试结束。",
       "reason": "统计信息和结束提示，无需保留原文。"
-    }
+    }}
   ]
-}
+}}
 ```
 
 # 6) 注意事项
@@ -279,3 +291,4 @@ back-end DBMS: MySQL >= 5.1
 
 现在请处理输入的观测文本并输出 JSON 结果。
 
+{INPUT_JSON}

@@ -25,9 +25,9 @@
   - subgoal：当前子目标
   - state_summary：最近几步状态摘要（上下文）
   - source_tool：产生观测的工具（如 nmap/curl/browser/ffuf/dirsearch）
-  - source_command：产生该观测的具体命令/操作
+  - source_command：产生该观测的具体命令/代码
 - obs：工具或系统输出
-  - obs_type：输出来源（如：stdout/stderr/system等，system 表示来自系统日志而非工具输出）
+  - obs_type：输出来源（如：stdout/stderr/tool/system等，system 表示来自系统日志而非工具输出）
   - obs_text：输出原文
 - retrieved_memories：从记忆库检索出的最相关若干条记忆条目（top-K）。每条包含：
   - mem_id：旧记忆ID（S3 的更新/取代目标引用）

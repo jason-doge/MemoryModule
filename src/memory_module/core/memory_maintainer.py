@@ -38,7 +38,8 @@ class MemoryMaintainer:
             max_tokens=general_max_tokens,
         )
         self.prompt_policy = prompt.maintainer_prompt_policy
-        self.prompt_content = prompt.maintainer_prompt_content
+        self.prompt_summarize = prompt.maintainer_prompt_summarize
+        self.prompt_update = prompt.maintainer_prompt_update
         self.memory_bank = memory_bank
         self.step_id = step_id
 
@@ -59,16 +60,26 @@ class MemoryMaintainer:
         data = {
             "context": context,
             "obs": obs,
-            "retrieved_memories": retrieved_memories,
+            "retrieved_memories": [
+                {
+                    "mem_id": mem["mem_id"],
+                    "mem_type": mem["mem_type"],
+                    "mem_content": mem["mem_content"],
+                    "context": mem["context"],
+                    "key": mem["key"],
+                } for mem in retrieved_memories
+            ],
         }
         # 使用决策模型生成操作建议
         prompt_text = self.prompt_policy.format(
             INPUT_JSON=json.dumps(data, ensure_ascii=False),
         )
         try:
-            decisions, _ = self.policy_model.chat(prompt_text, json_mode=True)
+            decisions, completion = self.policy_model.chat(prompt_text, json_mode=True)
+            print("[maintainer]" + "*" * 50)
+            print(completion.choices[0].message.content)
+            print("[maintainer]" + "*" * 50)
             decisions = decisions.get("decisions", "N/A")
-            pprint(decisions)
             if decisions == "N/A":
                 raise ValueError("Policy model didn't return 'decisions' field.")
         except Exception as e:
@@ -107,79 +118,170 @@ class MemoryMaintainer:
         执行记忆管理操作
         """
         action = decision.get("base_action", "No base_action field found.")
+        print("base_action: " + action)
         key = decision.get("key", {
             "mark_key": False,
             "key_type": None,
             "key_level": 0,
         })
+        policy_reason = decision.get("reason", "")
+        mem_ids = []
         if action == "S1_SUMMARIZE_ADD":
             # 构造数据
             data = {
-                "action": "S1_SUMMARIZE_ADD",
                 "context": context,
                 "obs": obs,
-                "target_memories": [],
             }
             # 使用内容模型生成记忆摘要
-            prompt_text = self.prompt_content.format(
+            prompt_text = self.prompt_summarize.format(
                 INPUT_JSON=json.dumps(data, ensure_ascii=False),
             )
             try:
-                summary, completion = self.general_model.chat(prompt_text, json_mode=True)
+                reply_dict, completion = self.general_model.chat(prompt_text, json_mode=True)
                 print(f"Generated summary: {completion.choices[0].message.content}")
-                summary = summary.get("mem_content", "N/A")
-                if summary == "N/A":
-                    raise ValueError("Content model didn't return'summary' field.")
             except Exception as e:
-                summary = ""
                 print(f"Error in content model: {e}")
-            # 保存到记忆库
+                return []
+            overall_summary = reply_dict.get("overall_summary", "").strip()
+            segments = reply_dict.get("segments", [])
+            further_explanation = {
+                "policy": {
+                    "reason": policy_reason,
+                },
+                "content": {
+                    "overall_summary": overall_summary,
+                    "segments": [
+                        {
+                            "type": segment.get("type", "").strip(),
+                            "reason": segment.get("reason", "").strip(),
+                        } for segment in segments
+                    ]
+                }
+            }
+            processed_segments = [
+                {
+                    "type": segment.get("type", "").strip(),
+                    "content": segment.get("content", "").strip(),
+                } for segment in segments
+            ]
+            content = json.dumps({
+                "overall_summary": overall_summary,
+                "segments": processed_segments,
+            }, ensure_ascii=False)
             mem_id = self.memory_bank.s1_summarize_add(
                 obs_id=obs_id,
-                content=summary,
+                content=content,
                 context=context,
                 key=key,
+                explanation=further_explanation,
             )
+            # for segment in segments:
+            #     try:
+            #         type = segment.get("type", "").strip().upper()
+            #         content = segment.get("content", "").strip()
+            #         reason = segment.get("reason", "").strip()
+            #         further_explanation = {
+            #             "policy": {
+            #                 "reason": policy_reason,
+            #             },
+            #             "content": {
+            #                 "overall_summary": overall_summary,
+            #                 "reason": reason,
+            #             }
+            #         }
+            #         if type == "SUMMARY":
+            #             mem_id = self.memory_bank.s1_summarize_add(
+            #                 obs_id=obs_id,
+            #                 content=content,
+            #                 context=context,
+            #                 key=key,
+            #                 further_explanation=further_explanation,
+            #             )
+            #             mem_ids.append(mem_id)
+            #         elif type == "RAW":
+            #             mem_id = self.memory_bank.s2_raw_add(
+            #                 obs_id=obs_id,
+            #                 content=content,
+            #                 context=context,
+            #                 key=key,
+            #                 further_explanation=further_explanation,
+            #             )
+            #             mem_ids.append(mem_id)
+            #         else:
+            #             raise ValueError(f"Unknown type: {type}")
+            #     except Exception as e:
+            #         print(f"Error in content model (segment loop): {e}")
             return mem_id
         elif action == "S2_RAW_ADD":
             # 将obs转换为JSON字符串
             obs_text = json.dumps(obs, ensure_ascii=False)
-            self.memory_bank.s2_raw_add(
+            further_explanation = {
+                "policy": {
+                    "reason": policy_reason,
+                },
+            }
+            mem_id = self.memory_bank.s2_raw_add(
                 obs_id=obs_id,
                 content=obs_text,
                 context=context,
                 key=key,
+                explanation=further_explanation,
             )
-            return None
+            return mem_id
         elif action == "S3_UPDATE_REPLACE":
+            old_memories = []
+            for memory in decision["s3_update"]:
+                old_memories.append({
+                    "mem_id": memory["mem_id"],
+                    "mem_content": memory["mem_content"],
+                    "mem_type": memory["mem_type"],
+                })
             # 构造数据
             data = {
-                "action": "S3_UPDATE_REPLACE",
                 "context": context,
                 "obs_text": obs,
-                "target_memories": decision["s3_update"],
+                "target_memories": old_memories,
             }
             # 使用内容模型生成记忆摘要
-            prompt_text = self.prompt_content.format(
+            prompt_text = self.prompt_update.format(
                 INPUT_JSON=json.dumps(data, ensure_ascii=False),
             )
             try:
-                summary, completion = self.general_model.chat(prompt_text, json_mode=True)
+                reply_dict, completion = self.general_model.chat(prompt_text, json_mode=True)
                 print(f"Generated summary: {completion.choices[0].message.content}")
-                summary = summary.get("mem_content", "N/A")
+                summary = reply_dict.get("merged_memory", "N/A")
                 if summary == "N/A":
                     raise ValueError("Content model didn't return 'summary' field.")
             except Exception as e:
-                summary = ""
                 print(f"Error in content model: {e}")
+                return []
+            # 检查模型输入输出的old_memories是否一致
+            input_old_memory_ids = [mem["mem_id"] for mem in decision["s3_update"]]
+            output_old_memory_ids = reply_dict.get("replaced_ids", [])
+            for input_id in input_old_memory_ids:
+                if input_id not in output_old_memory_ids:
+                    print(f"Warning: memory {input_id} not found in output.")
+            for output_id in output_old_memory_ids:
+                if output_id not in input_old_memory_ids:
+                    print(f"Warning: memory {output_id} not found in input.")
             # 保存到记忆库
-            target_memory_ids = [mem["mem_id"] for mem in decision["s3_update"]]
+            further_explanation = {
+                "policy": {
+                    "reason": policy_reason,
+                },
+                "content": {
+                    "merge_type": reply_dict.get("merge_type", ""),
+                    "improvement": reply_dict.get("improvement", ""),
+                    "replaced_ids": reply_dict.get("replaced_ids", []),
+                }
+            }
             mem_id = self.memory_bank.s3_update_replace(
                 obs_id=obs_id,
                 content=summary,
                 context=context,
                 key=key,
-                mem_ids=target_memory_ids,
+                mem_ids=input_old_memory_ids,
+                explanation=further_explanation,
             )
             return mem_id
         elif action == "S4_DISCARD":

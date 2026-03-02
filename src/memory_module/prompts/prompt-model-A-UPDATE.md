@@ -11,10 +11,20 @@
 # 2) 输入
 你将收到以下输入：
 
-## 2.1 新观测（obs_text）
-纯文本字符串，表示新的工具输出或观测结果。
+## 2.1 观测上下文
+包括当前渗透阶段、当前子目标、近期状态摘要、产生观测的工具、具体命令等信息。
+- `phase`：当前渗透阶段
+- `subgoal`：当前子目标
+- `state_summary`：近期状态摘要
+- `source_tool`：产生观测的工具
+- `source_command`：具体命令
 
-## 2.2 旧记忆列表（old_memories）
+## 2.2 新观测（obs）
+包括：
+- `obs_type`：输出来源（如：stdout/stderr/tool/system等，system 表示来自系统日志而非工具输出）
+- `obs_text`：纯文本字符串，表示新的工具输出或观测结果。
+
+## 2.3 旧记忆列表（old_memories）
 一个或多个需要更新的旧记忆，每条旧记忆包含：
 - `mem_id`：旧记忆的唯一标识符
 - `mem_content`：旧记忆的内容
@@ -22,29 +32,41 @@
 
 输入格式示例：
 ```json
-{
-  "obs_text": "新观测的原文...",
+{{
+  "context": {{
+    "phase": "当前渗透阶段",
+    "subgoal": "当前子目标",
+    "state_summary": "近期状态摘要",
+    "source_tool": "产生观测的工具",
+    "source_command": "具体命令"
+  }},
+  "obs": {{
+    "obs_type": "输出来源（如：stdout/stderr/tool/system等，system 表示来自系统日志而非工具输出）",
+    "obs_text": "新观测的原文..."
+  }},
   "old_memories": [
-    {
+    {{
       "mem_id": "mem_000123",
       "mem_content": "旧记忆内容...",
-      "mem_type": "SUMMARY"
-    }
+      "mem_type": "SUMMARY|RAW|MERGED"
+    }}
   ]
-}
+}}
 ```
 
 # 3) 输出格式（严格 JSON）
 你必须输出一个 JSON 对象，包含以下字段：
 
 ```json
-{
+{{
   "merged_memory": "合并后的新记忆内容（完整、准确、可直接使用）",
   "merge_type": "correction | supplement | deduplication | consolidation",
   "improvement": "说明新记忆相比旧记忆的变化点（2-3句话）",
   "replaced_ids": ["mem_000123", "..."]
-}
+}}
 ```
+
+不得输出任何多余字段；不得在 JSON 之外输出任何解释文本；不得将 JSON 包裹在 Markdown 代码块等其他符号中。
 
 ## 3.1 字段说明
 - `merged_memory`：合并后的新记忆内容，应该是完整、自包含的，可以独立使用而不依赖旧记忆。
@@ -131,135 +153,185 @@
 
 ### 输入：
 ```json
-{
-  "obs_text": "HTTP/1.1 200 OK\nServer: Apache/2.4.41 (Ubuntu)\nX-Powered-By: PHP/7.4.3\nContent-Type: text/html; charset=UTF-8\n\n<!DOCTYPE html>...",
+{{
+  "context": {{
+    "phase": "reconnaissance",
+    "subgoal": "web_technology_fingerprinting",
+    "state_summary": "Completed initial port scanning on target host 10.0.0.5, confirming port 80 is open. Previously identified Apache HTTP server and Ubuntu OS through basic banner grabbing, but specific version numbers were not determined.",
+    "source_tool": "curl",
+    "source_command": "curl -I http://10.0.0.5/"
+  }},
+  "obs": {{
+    "obs_type": "tool",
+    "obs_text": "HTTP/1.1 200 OK\nServer: Apache/2.4.41 (Ubuntu)\nX-Powered-By: PHP/7.4.3\nContent-Type: text/html; charset=UTF-8\n\n<!DOCTYPE html>..."
+  }},
   "old_memories": [
-    {
+    {{
       "mem_id": "mem_000045",
       "mem_content": "目标 10.0.0.5 的 80 端口运行 Apache HTTP 服务器，操作系统为 Ubuntu。",
       "mem_type": "SUMMARY"
-    }
+    }}
   ]
-}
+}}
 ```
 
 ### 输出：
 ```json
-{
+{{
   "merged_memory": "目标 10.0.0.5 的 80 端口运行 Apache/2.4.41 (Ubuntu) HTTP 服务器，后端使用 PHP/7.4.3。操作系统为 Ubuntu。这些具体版本信息为后续漏洞探测提供了精确目标。",
   "merge_type": "correction",
   "improvement": "新记忆提供了精确的 Apache 版本号（2.4.41）和 PHP 版本号（7.4.3），相比旧记忆的模糊描述更有价值。具体版本信息可用于 CVE 查询和漏洞匹配。",
   "replaced_ids": ["mem_000045"]
-}
+}}
 ```
 
 ## 示例 2：补充（supplement）- 注入点获得更多上下文
 
 ### 输入：
 ```json
-{
-  "obs_text": "GET /search?q=<script>alert(1)</script> HTTP/1.1\n\nHTTP/1.1 200 OK\nContent-Type: text/html\n\n<html>\n<body>\n<script>\nvar query = \"<script>alert(1)</script>\";\nconsole.log(query);\n</script>\n<p>Search results for: <script>alert(1)</script></p>\n</body>\n</html>",
+{{
+  "context": {{
+    "phase": "exploitation",
+    "subgoal": "reflected_xss_validation",
+    "state_summary": "Confirmed reflective behavior at /search endpoint where q parameter input is echoed in the response. Previously identified the reflection point but lacked detailed context regarding sanitization and exact reflection locations.",
+    "source_tool": "curl",
+    "source_command": "curl 'http://target.com/search?q=<script>alert(1)</script>'"
+  }},
+  "obs": {{
+    "obs_type": "tool",
+    "obs_text": "GET /search?q=<script>alert(1)</script> HTTP/1.1\n\nHTTP/1.1 200 OK\nContent-Type: text/html\n\n<html>\n<body>\n<script>\nvar query = \"<script>alert(1)</script>\";\nconsole.log(query);\n</script>\n<p>Search results for: <script>alert(1)</script></p>\n</body>\n</html>"
+  }},
   "old_memories": [
-    {
+    {{
       "mem_id": "mem_000067",
       "mem_content": "发现 /search 页面的 q 参数存在反射，输入的内容会在响应中回显。",
       "mem_type": "SUMMARY"
-    }
+    }}
   ]
-}
+}}
 ```
 
 ### 输出：
 ```json
-{
+{{
   "merged_memory": "发现 /search 页面的 q 参数存在反射型 XSS 漏洞。输入的内容会在两个位置回显：(1) JavaScript 代码中的字符串变量 query，(2) HTML 的 <p> 标签内容。测试 payload <script>alert(1)</script> 被完整反射，未经过滤或编码。JavaScript 上下文中的反射位于双引号字符串内，可通过闭合引号实现代码执行。",
   "merge_type": "supplement",
   "improvement": "新记忆补充了关键的反射上下文信息：反射位置（JS 变量和 HTML 标签）、过滤情况（无过滤）、利用方式（闭合双引号）。这些细节对构造有效的 XSS payload 至关重要。",
   "replaced_ids": ["mem_000067"]
-}
+}}
 ```
 
 ## 示例 3：去重（deduplication）- 重复扫描结果
 
 ### 输入：
 ```json
-{
-  "obs_text": "PORT      STATE SERVICE     VERSION\n22/tcp    open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5\n80/tcp    open  http        Apache httpd 2.4.41\n443/tcp   open  ssl/http    Apache httpd 2.4.41\n3306/tcp  open  mysql       MySQL 5.7.40",
+{{
+  "context": {{
+    "phase": "reconnaissance",
+    "subgoal": "service_enumeration",
+    "state_summary": "Initial port scan completed, identifying open ports 22, 80, 443, and 3306 on target host. Basic service detection performed but specific version details and banner information remain undetermined.",
+    "source_tool": "nmap",
+    "source_command": "nmap -sV -p 22,80,443,3306 10.0.0.5"
+  }},
+  "obs": {{
+    "obs_type": "tool",
+    "obs_text": "PORT      STATE SERVICE     VERSION\n22/tcp    open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5\n80/tcp    open  http        Apache httpd 2.4.41\n443/tcp   open  ssl/http    Apache httpd 2.4.41\n3306/tcp  open  mysql       MySQL 5.7.40"
+  }},
   "old_memories": [
-    {
+    {{
       "mem_id": "mem_000023",
       "mem_content": "目标主机开放端口：22 (SSH OpenSSH 8.2p1)、80 (HTTP Apache 2.4.41)、443 (HTTPS Apache 2.4.41)、3306 (MySQL 5.7.40)。",
       "mem_type": "SUMMARY"
-    }
+    }}
   ]
-}
+}}
 ```
 
 ### 输出：
 ```json
-{
+{{
   "merged_memory": "目标主机开放端口：22 (SSH OpenSSH 8.2p1 Ubuntu 4ubuntu0.5)、80 (HTTP Apache 2.4.41)、443 (HTTPS Apache 2.4.41)、3306 (MySQL 5.7.40)。这些服务为后续漏洞探测提供了攻击面。",
   "merge_type": "deduplication",
   "improvement": "新记忆补充了 SSH 的完整版本号（包含 Ubuntu 补丁版本 4ubuntu0.5），并增加了对后续步骤的价值说明。信息更完整且更有指导性。",
   "replaced_ids": ["mem_000023"]
-}
+}}
 ```
 
 ## 示例 4：整合（consolidation）- 多条线索整合
 
 ### 输入：
 ```json
-{
-  "obs_text": "sqlmap identified the following injection point(s):\nParameter: username (POST)\n    Type: error-based\n    Title: MySQL >= 5.1 AND error-based\n    Payload: username=admin' AND EXTRACTVALUE(1,CONCAT(0x5c,(SELECT version())))-- -\n\nDatabase: webapp_db\nTable: users\nColumns: id, username, password, email, role",
+{{
+  "context": {{
+    "phase": "exploitation",
+    "subgoal": "database_schema_enumeration",
+    "state_summary": "Successfully confirmed error-based SQL injection vulnerability in /login username parameter (MySQL >= 5.1). Previously extracted database name 'webapp_db' and identified injection payload structure.",
+    "source_tool": "sqlmap",
+    "source_command": "sqlmap -u 'http://target.com/login' --data='username=admin&password=test' -D webapp_db -T users --columns --batch"
+  }},
+  "obs": {{
+    "obs_type": "tool",
+    "obs_text": "sqlmap identified the following injection point(s):\nParameter: username (POST)\n    Type: error-based\n    Title: MySQL >= 5.1 AND error-based\n    Payload: username=admin' AND EXTRACTVALUE(1,CONCAT(0x5c,(SELECT version())))-- -\n\nDatabase: webapp_db\nTable: users\nColumns: id, username, password, email, role"
+  }},
   "old_memories": [
-    {
+    {{
       "mem_id": "mem_000089",
       "mem_content": "发现 /login 页面的 username 参数存在 SQL 注入漏洞，数据库类型为 MySQL >= 5.1。",
       "mem_type": "SUMMARY"
-    },
-    {
+    }},
+    {{
       "mem_id": "mem_000091",
       "mem_content": "通过 SQL 注入确认数据库名为 webapp_db。",
       "mem_type": "SUMMARY"
-    }
+    }}
   ]
-}
+}}
 ```
 
 ### 输出：
 ```json
-{
+{{
   "merged_memory": "确认 /login 页面的 username 参数存在 error-based SQL 注入漏洞，数据库类型为 MySQL >= 5.1。可用 payload：username=admin' AND EXTRACTVALUE(1,CONCAT(0x5c,(SELECT version())))-- -。已通过注入获取数据库结构：数据库名 webapp_db，存在 users 表，包含字段 id, username, password, email, role。可进一步提取用户凭据或尝试写入 webshell。",
   "merge_type": "consolidation",
   "improvement": "新记忆整合了注入点发现、数据库类型、可用 payload、数据库结构等多个分散的信息，形成完整的攻击链。提供了明确的下一步行动方向（提取凭据或写入 webshell）。",
   "replaced_ids": ["mem_000089", "mem_000091"]
-}
+}}
 ```
 
 ## 示例 5：纠正（correction）- 状态变化
 
 ### 输入：
 ```json
-{
-  "obs_text": "GET /admin HTTP/1.1\nHost: 10.0.0.5\n\nHTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><head><title>Admin Panel</title></head>\n<body><h1>Welcome to Admin Panel</h1>\n<p>Logged in as: guest</p>...",
+{{
+  "context": {{
+    "phase": "exploitation",
+    "subgoal": "access_control_bypass_verification",
+    "state_summary": "Previous reconnaissance indicated /admin endpoint returned 403 Forbidden, suggesting authentication was required. Re-evaluating access controls to verify current protection status and potential misconfigurations.",
+    "source_tool": "curl",
+    "source_command": "curl http://10.0.0.5/admin"
+  }},
+  "obs": {{
+    "obs_type": "tool",
+    "obs_text": "GET /admin HTTP/1.1\nHost: 10.0.0.5\n\nHTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><head><title>Admin Panel</title></head>\n<body><h1>Welcome to Admin Panel</h1>\n<p>Logged in as: guest</p>..."
+  }},
   "old_memories": [
-    {
+    {{
       "mem_id": "mem_000056",
       "mem_content": "发现 /admin 路径，但返回 403 Forbidden，需要认证才能访问。",
       "mem_type": "SUMMARY"
-    }
+    }}
   ]
-}
+}}
 ```
 
 ### 输出：
 ```json
-{
+{{
   "merged_memory": "发现 /admin 路径可直接访问（200 OK），无需认证。页面显示 Admin Panel，当前以 guest 身份登录。之前的 403 状态可能是临时配置或已被修复。该路径可能存在权限绕过或未授权访问漏洞，需进一步测试 guest 用户的权限范围。",
   "merge_type": "correction",
   "improvement": "新记忆纠正了访问状态（403 → 200），并发现了关键信息：可以 guest 身份访问管理面板。这表明存在潜在的权限绕过漏洞，为后续利用提供了明确方向。",
   "replaced_ids": ["mem_000056"]
-}
+}}
 ```
 
 # 6) 注意事项
@@ -272,3 +344,4 @@
 
 现在请处理输入并输出 JSON 结果。
 
+{INPUT_JSON}

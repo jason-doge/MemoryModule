@@ -28,9 +28,9 @@
   - subgoal：当前子目标
   - state_summary：最近几步状态摘要（上下文）
   - source_tool：产生观测的工具（如 nmap/curl/browser/ffuf/dirsearch）
-  - source_command：产生该观测的具体命令/操作
+  - source_command：产生该观测的具体命令/代码
 - obs：工具或系统输出
-  - obs_type：输出来源（如：stdout/stderr/system等，system 表示来自系统日志而非工具输出）
+  - obs_type：输出来源（如：stdout/stderr/tool/system等，system 表示来自系统日志而非工具输出）
   - obs_text：输出原文
 - retrieved_memories：从记忆库检索出的最相关若干条记忆条目（top-K）。每条包含：
   - mem_id：旧记忆ID（S3 的更新/取代目标引用）
@@ -146,6 +146,7 @@
 定义：
 - 当新观测与已存在记忆属于同一对象/同一线索，并且新观测对旧记忆起到"纠正/补充/去重/整合"作用时，选择 S3。
 - 你需要指明要更新的旧记忆（s3_update）。通用模型将生成一条"新记忆"取代旧记忆，并维护版本链；旧记忆不会被删除。
+- 如果当前观测可更新多组旧记忆，每组旧记忆可以包含多个记忆条目，则应使用多个 S3_UPDATE_REPLACE 动作，而非单个动作囊括所有需要更新记忆条目。
 
 适用场景（典型信号）：
 - 新观测纠正旧结论（如：版本识别更准确、之前误判、路径可达性变化、认证状态变化等）。

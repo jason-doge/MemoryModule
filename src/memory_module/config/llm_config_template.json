@@ -1,17 +1,13 @@
 {
-    "chat_model": {
+    "chat": {
         "qwen-max": {
             "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
             "api_key": "sk-aaa",
-            "model_name": "qwen-max"
-        },
-        "deepseek-chat": {
-            "base_url": "https://api.deepseek.com",
-            "api_key": "sk-aaa",
-            "model_name": "deepseek-chat"
+            "model_name": "qwen-max",
+            "max_context_tokens": 262144
         }
     },
-    "embedding_model": {
+    "embedding": {
         "qwen-text-embedding-v4": {
             "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
             "api_key": "sk-aaa",
@@ -29,7 +25,8 @@
                     64
                 ]
             },
-            "max_batch_size": 10
+            "max_batch_size": 10,
+            "max_context_tokens": 8192
         }
     }
 }

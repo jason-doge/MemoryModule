@@ -49,8 +49,13 @@ class LLMConfig:
                 return config
             raise FileNotFoundError(f"No config file found at {path}.")
 
-if __name__ == "__main__":
-    config = LLMConfig()
-    pprint(config.config)
 
+_template_file = Path(__file__).resolve().parent / "llm_config_template.json"
+with open(_template_file, "r", encoding="utf-8") as f:
+    llm_config_template = f.read()
+
+if __name__ == "__main__":
+    # config = LLMConfig()
+    # pprint(config.config)
+    print(llm_config_template)
 

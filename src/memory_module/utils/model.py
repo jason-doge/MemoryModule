@@ -9,9 +9,11 @@ import numpy as np
 import json
 from pprint import pprint
 from memory_module.config.llm_config import LLMConfig
+from memory_module.debug import log_entry
 
 class ChatModel:
     """LLM模型统一接口类"""
+    @log_entry
     def __init__(
         self,
         model: str = "qwen-max", 
@@ -38,6 +40,9 @@ class ChatModel:
         self.model_name = self.config.get("model_name", model)
         self.base_url = self.config.get("base_url", "")
         self.api_key = self.config.get("api_key", "")
+
+        self.max_context_tokens = self.config.get("max_context_tokens", 262144)
+
         self.histories = [[
             {"role": "system", "content": self.system_prompt}
         ]]
@@ -49,10 +54,11 @@ class ChatModel:
             base_url=self.base_url,
         )
 
+    @log_entry
     def __repr__(self):
         return f"<ChatModel {self.model}: {self.model_name} @{self.base_url}>"
-    
 
+    @log_entry
     def change_history(self, history: List[Dict[str, str]]):
         """更改对话历史（增加会话计数）"""
         # 检查是否和某一个对话历史相同
@@ -67,6 +73,7 @@ class ChatModel:
             self.history_cnt += 1
             self.history_idx = self.history_cnt
 
+    @log_entry
     def chat(
             self, 
             message: str,
@@ -92,70 +99,51 @@ class ChatModel:
         temperature = temperature if temperature is not None else self.temperature
         top_p = top_p if top_p is not None else self.top_p
         max_tokens = max_tokens if max_tokens is not None else self.max_tokens
-        
-        # 如果提供了history, 则修改历史
+
         if history is not None:
             self.change_history(history)
 
-        # 将message添加到历史
         self.histories[self.history_idx].append(
             {"role": "user", "content": message}
         )
 
-        if not json_mode:
-            try:
-                completion = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=self.histories[self.history_idx],
-                    temperature=temperature,
-                    top_p=top_p,
-                    max_tokens=max_tokens,
-                    **kwargs
-                )
-            except Exception as e:
-                print(f"[Error] LLMModel.chat failed: {e}")
-                return ""
-        else:
-            error_list = []
-            for i in range(5):
-                try:
-                    completion = self.client.chat.completions.create(
-                        model=self.model_name,
-                        messages=self.histories[self.history_idx],
-                        temperature=temperature,
-                        top_p=top_p,
-                        max_tokens=max_tokens,
-                        response_format={'type': 'json_object'},
-                        **kwargs
-                    )
-                    result = json.loads(completion.choices[0].message.content)
-                    break
-                except Exception as e:
-                    error_list.append(e)
-                    print(f"[Error] LLMModel.chat failed: {e}")
-                    if 'completion' in locals():
-                        print('LLM返回内容:\n' + completion.choices[0].message.content)
-                    continue
-            else:
-                print(f"[Error] LLMModel.chat failed: 5 次请求均失败")
-                print(f"错误列表：{error_list}")
-        
-        # 调用记录 (后期用于日志记录)
-        completion_json = completion.model_dump_json()
-        # c_json = json.loads(completion_json)
-        # pprint(c_json)
+        # 核心修改：构建参数字典并过滤 None
+        api_params = {
+            "model": self.model_name,
+            "messages": self.histories[self.history_idx],
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            **kwargs
+        }
+        api_params = {k: v for k, v in api_params.items() if v is not None}
+
+        if json_mode:
+            api_params["response_format"] = {'type': 'json_object'}
+
+        try:
+            completion = self.client.chat.completions.create(**api_params)
+        except Exception as e:
+            print(f"[Error] LLMModel.chat failed: {e}")
+            return "" if not json_mode else None
 
         reply = completion.choices[0].message.content
         self.histories[self.history_idx].append(
             {"role": "assistant", "content": reply}
         )
-        if not json_mode:
-            return reply, completion
-        else:
-            return result, completion
+
+        if json_mode:
+            try:
+                result = json.loads(reply)
+                return result, completion
+            except json.JSONDecodeError:
+                return None, completion
+
+        return reply, completion
 
 class EmbeddingModel:
     """统一的文本向量化接口类"""
+    @log_entry
     def __init__(
             self,
             model: str = "qwen-text-embedding-v4",
@@ -173,16 +161,19 @@ class EmbeddingModel:
         self.api_key = self.config.get("api_key", "")
         self.dimensions = self.config.get("dimensions", {})
         self.choose_dimensions = self._check_choose_dimensions(self.dimensions, dimensions)
+        self.max_context_tokens = self.config.get("max_context_tokens", 8192)
 
         self.client = OpenAI(
             api_key=self.api_key,
             base_url=self.base_url,
         )
 
+    @log_entry
     def __repr__(self):
         return f"<EmbeddingModel {self.model}: {self.embedding_model} with {self.choose_dimensions} dimensions @{self.base_url}>"
     
     @staticmethod
+    @log_entry
     def _check_choose_dimensions(dimensions: Dict | int, suggest_dimensions: Optional[int] = None):
         """检查并设置选择的维度"""
         # 如果dimensions只是int, 则直接返回dimensions
@@ -203,6 +194,7 @@ class EmbeddingModel:
         else:
             raise ValueError("Invalid dimensions configuration")
 
+    @log_entry
     def embedding(
             self,
             input_text: Union[str, List[str]],
@@ -219,28 +211,25 @@ class EmbeddingModel:
             单条输入返回 List[float]，多条输入返回 List[List[float]]
         """
         dimensions = dimensions or self.choose_dimensions
-        
-        max_batch_size = self.config.get(self.model, {}).get("max_batch_size", 10)
-        
-        # 处理单条字符串
+
+        api_params = {
+            "model": self.embedding_model,
+            "input": input_text,
+            "dimensions": dimensions
+        }
+        api_params = {k: v for k, v in api_params.items() if v is not None}
+
         if isinstance(input_text, str):
-            completion = self.client.embeddings.create(
-                model=self.embedding_model,
-                input=input_text,
-                dimensions=dimensions
-            )
-            # 调用记录 (后期用于日志记录)
-            completion_json = completion.model_dump_json()
+            completion = self.client.embeddings.create(**api_params)
             return completion.data[0].embedding
-        
-        # 处理列表（需要分批）
-        elif isinstance(input, list):
+
+        elif isinstance(input_text, list):
             completion_json = []
             all_embeddings = []
             
             # 分批处理，避免超过API限制
-            for i in range(0, len(input), max_batch_size):
-                batch = input[i:i + max_batch_size]
+            for i in range(0, len(input_text), self.max_context_tokens):
+                batch = input_text[i:i + self.max_context_tokens]
                 
                 completion = self.client.embeddings.create(
                     model=self.embedding_model,

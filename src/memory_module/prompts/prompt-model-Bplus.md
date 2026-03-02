@@ -17,7 +17,7 @@
     "source_command": "产生当前观测的具体命令或操作"
   }},
   "obs": {{
-    "obs_type": "输出来源（如：stdout/stderr/system等，system 表示来自系统日志而非工具输出）",
+    "obs_type": "输出来源（如：stdout/stderr/tool/system等，system 表示来自系统日志而非工具输出）",
     "obs_text": "输出原文"
   }},
   "selected_memories": [
@@ -29,7 +29,7 @@
         "phase": "该记忆产生时的渗透阶段",
         "subgoal": "该记忆产生时的子目标",
         "source_tool": "产生该记忆的工具", 
-        "source_command": "产生该记忆的具体命令"
+        "source_command": "产生该记忆的具体命令或代码"
       }},
       "key": {{
         "mark_key": true/false,
