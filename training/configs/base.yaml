@@ -1,0 +1,25 @@
+# 共享训练配置
+model_name_or_path: "Qwen/Qwen3-1.7B"
+max_length: 2048
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 16
+learning_rate: 2.0e-5
+num_train_epochs: 3
+warmup_ratio: 0.1
+weight_decay: 0.01
+logging_steps: 10
+save_steps: 100
+eval_steps: 100
+save_total_limit: 3
+bf16: true
+ddp_find_unused_parameters: false
+
+# LoRA
+use_lora: true
+lora_r: 8
+lora_alpha: 16
+lora_dropout: 0.05
+lora_target_modules: ["q_proj", "v_proj"]
+
+# 可选 4bit 量化（显存不足时）
+use_4bit: false

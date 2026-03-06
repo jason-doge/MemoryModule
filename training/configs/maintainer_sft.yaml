@@ -1,0 +1,7 @@
+# 记忆管理模型 SFT
+_base_: base.yaml
+task: maintainer
+train_file: training/outputs/maintainer_train.jsonl
+val_file: training/outputs/maintainer_val.jsonl
+output_dir: training/outputs/maintainer_sft
+run_name: maintainer_sft

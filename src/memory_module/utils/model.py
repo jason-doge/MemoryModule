@@ -58,6 +58,12 @@ class ChatModel:
     def __repr__(self):
         return f"<ChatModel {self.model}: {self.model_name} @{self.base_url}>"
 
+    def reset_history(self) -> None:
+        """重置对话历史为仅包含 system prompt，避免跨样本上下文污染"""
+        self.histories = [[{"role": "system", "content": self.system_prompt}]]
+        self.history_cnt = 0
+        self.history_idx = 0
+
     @log_entry
     def change_history(self, history: List[Dict[str, str]]):
         """更改对话历史（增加会话计数）"""

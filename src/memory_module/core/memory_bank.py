@@ -721,7 +721,9 @@ class MemoryBank:
                 memory["provenance"]["supersedes_mem_ids"] = [row[0] for row in self.sqlite_cursor.fetchall()]
         else:
             raise ValueError("Invalid mode")
-        return memory_list
+        # 按 mem_ids 顺序返回，保持 retrieve() 的排序
+        mem_by_id = {m["mem_id"]: m for m in memory_list}
+        return [mem_by_id[mid] for mid in mem_ids if mid in mem_by_id]
     
     # 检查输入的一系列mem_ids是否存在于数据库中
     @log_entry

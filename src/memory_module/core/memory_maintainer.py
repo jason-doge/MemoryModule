@@ -44,7 +44,7 @@ class MemoryMaintainer:
         self.step_id = step_id
 
     def __repr__(self) -> str:
-        return f"<MemoryMaintainer(model={self.model})>"
+        return f"<MemoryMaintainer(policy={self.policy_model.model})>"
 
     @log_entry
     def decide_action(
@@ -70,6 +70,8 @@ class MemoryMaintainer:
                 } for mem in retrieved_memories
             ],
         }
+        # 每次决策前重置历史，避免跨样本上下文污染
+        self.policy_model.reset_history()
         # 使用决策模型生成操作建议
         prompt_text = self.prompt_policy.format(
             INPUT_JSON=json.dumps(data, ensure_ascii=False),
@@ -119,11 +121,19 @@ class MemoryMaintainer:
         """
         action = decision.get("base_action", "No base_action field found.")
         print("base_action: " + action)
-        key = decision.get("key", {
-            "mark_key": False,
-            "key_type": None,
-            "key_level": 0,
-        })
+        # 兼容 prompt 输出的顶层字段 (mark_key/key_type/key_level) 与嵌套 key 对象
+        key = decision.get("key")
+        if key is None:
+            key = {
+                "mark_key": decision.get("mark_key", False),
+                "key_type": decision.get("key_type"),
+                "key_level": decision.get("key_level", 0),
+            }
+        key = {
+            "mark_key": key.get("mark_key", False),
+            "key_type": key.get("key_type"),
+            "key_level": key.get("key_level", 0),
+        }
         policy_reason = decision.get("reason", "")
         mem_ids = []
         if action == "S1_SUMMARIZE_ADD":
@@ -132,6 +142,7 @@ class MemoryMaintainer:
                 "context": context,
                 "obs": obs,
             }
+            self.general_model.reset_history()
             # 使用内容模型生成记忆摘要
             prompt_text = self.prompt_summarize.format(
                 INPUT_JSON=json.dumps(data, ensure_ascii=False),
@@ -242,6 +253,7 @@ class MemoryMaintainer:
                 "obs_text": obs,
                 "target_memories": old_memories,
             }
+            self.general_model.reset_history()
             # 使用内容模型生成记忆摘要
             prompt_text = self.prompt_update.format(
                 INPUT_JSON=json.dumps(data, ensure_ascii=False),

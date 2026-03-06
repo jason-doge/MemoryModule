@@ -78,9 +78,9 @@ class StepWeightConfig:
 class JudgeConfig:
     """Judge模型配置"""
     model_name: str = "gpt-4o"
-    # temperature: float = 0.0
+    temperature: float = 0.0
     max_tokens: int = 1
-    # top_logprobs: int = 5
+    top_logprobs: int = 5
     api_key: Optional[str] = None
     base_url: Optional[str] = None
 
@@ -117,19 +117,27 @@ class JudgeEvaluator:
     用于计算 S1（基于原始检索记忆格式化内容）和 S2（基于蒸馏记忆格式化内容）的支持度
     """
 
-    def __init__(self, model="qwen-max"):
-        llm_config_json = Path().cwd().resolve() / "llm_config.json"
-        with open(llm_config_json, "r", encoding="utf-8") as f:
-            config = json.load(f)
-        config = config.get("judge", {}).get(model, {})
-        self.config = JudgeConfig(
-            model_name = config.get("model_name", "qwen3-max"),
-            # temperature = config.get("temperature", 0.0),
-            max_tokens = config.get("max_tokens", 1),
-            # top_logprobs = config.get("top_logprobs", 5),
-            api_key = config.get("api_key", None),
-            base_url = config.get("base_url", None)
+    def __init__(self, model: Optional[str] = "qwen-max", config: Optional[JudgeConfig] = None):
+        if config is not None:
+            self.config = config
+        else:
+            llm_config_json = Path().cwd().resolve() / "llm_config.json"
+            with open(llm_config_json, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            cfg = cfg.get("judge", {}).get(model, {})
+            self.config = JudgeConfig(
+                model_name=cfg.get("model_name", "qwen3-max"),
+                temperature=cfg.get("temperature", 0.0),
+                max_tokens=cfg.get("max_tokens", 1),
+                top_logprobs=cfg.get("top_logprobs", 5),
+                api_key=cfg.get("api_key", None),
+                base_url=cfg.get("base_url", None)
+            )
+        self.client = OpenAI(
+            api_key=self.config.api_key or os.getenv("OPENAI_API_KEY", ""),
+            base_url=self.config.base_url or os.getenv("OPENAI_BASE_URL", None)
         )
+        self.judge_prompt_template = "{{INPUT_JSON}}"
 
     def format_prompt(
             self,

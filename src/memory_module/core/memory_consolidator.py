@@ -42,7 +42,7 @@ class MemoryConsolidator:
         self.step_id = step_id
 
     def __repr__(self) -> str:
-        return f"<MemoryConsolidator(model={self.model})>"
+        return f"<MemoryConsolidator(policy={self.policy_model.model})>"
     
     # 筛选记忆条目
     @log_entry
@@ -51,9 +51,11 @@ class MemoryConsolidator:
         context: Dict,
         obs: Dict,
         retrieved_memories: List[Dict],
-    ) -> List[Dict]:
+        return_raw_policy: bool = False,
+    ) -> List[Dict] | tuple:
         """
         筛选记忆条目
+        return_raw_policy: 为 True 时返回 (selected_memories, raw_policy_output)，用于 teacher rollout 导出
         """
         # 构造数据, 传入策略模型
         data = {
@@ -70,16 +72,21 @@ class MemoryConsolidator:
             ],
         }
         retrieved_memories_ids = [mem["mem_id"] for mem in retrieved_memories]
+        self.policy_model.reset_history()
         # 策略模型生成筛选结果
         prompt_text = self.prompt_policy.format(
             INPUT_JSON=json.dumps(data, ensure_ascii=False)
         )
         return_memories, completion = self.policy_model.chat(prompt_text, json_mode=True)
+        if return_memories is None:
+            if return_raw_policy:
+                return [], {"memories": []}
+            return []
         print("[consolidator]" + "*" * 50)
         print(completion.choices[0].message.content)
         print("[consolidator]" + "*" * 50)
 
-        return_memory_ids = [mem["mem_id"] for mem in return_memories["memories"]]
+        return_memory_ids = [mem["mem_id"] for mem in return_memories.get("memories", [])]
 
         # 检查两个条件: (1) 是否严格等同于retrieved_memories, (2) 是否在记忆库中
         # (1.1) return_memory_ids 是 retrieved_memores 的子集
@@ -109,6 +116,8 @@ class MemoryConsolidator:
         selected_memory_ids = [mem["mem_id"] for mem in return_memories["memories"] if mem["selected"] and mem["mem_id"] in return_memory_ids]
         selected_memories = [mem for mem in return_complete_memories if mem["mem_id"] in selected_memory_ids]
 
+        if return_raw_policy:
+            return selected_memories, return_memories
         return selected_memories
 
     # 整理记忆条目, 生成格式化的文本
@@ -136,6 +145,7 @@ class MemoryConsolidator:
                 } for mem in selected_memories
             ],
         }
+        self.general_model.reset_history()
         prompt_text = self.prompt_content.format(
             INPUT_JSON=json.dumps(data, ensure_ascii=False)
         )

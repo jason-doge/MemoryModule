@@ -1,0 +1,14 @@
+# 冒烟测试配置：极小数据 + 2 步训练，用于验证流水线
+_base_: base.yaml
+
+task: maintainer
+output_dir: training/outputs/smoke
+train_data: training/outputs/smoke_train.jsonl
+val_data: ""
+max_length: 512
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 1
+num_train_epochs: 1
+max_steps: 2
+save_steps: 1
+logging_steps: 1

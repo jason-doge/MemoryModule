@@ -1,0 +1,9 @@
+# 记忆整理模型 SFT
+_base_: base.yaml
+task: consolidator
+train_file: training/outputs/consolidator_train.jsonl
+val_file: training/outputs/consolidator_val.jsonl
+output_dir: training/outputs/consolidator_sft
+run_name: consolidator_sft
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 32

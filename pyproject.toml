@@ -3,10 +3,27 @@ name = "memory_module"
 version = "0.1.0"
 description = "A memory manager for LLM driven automated penetration testing system."
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+    "chromadb",
+    "openai",
+    "modelscope",
+    "ulid",
+    "numpy",
+]
 
 [project.optional-dependencies]
 dev = []
+train = [
+    "transformers>=4.51.0",
+    "datasets",
+    "peft",
+    "accelerate",
+    "bitsandbytes",
+    "safetensors",
+    "tensorboard",
+    "pyyaml",
+    "scikit-learn",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]

@@ -66,21 +66,18 @@
 首先安装如下依赖包:
 
 ```bash
-pip install sqlite
-pip install chromadb
-pip install openai
-pip install modelscope
-pip install tiktoken
-pip install pathlib
+pip install chromadb openai modelscope ulid numpy
 ```
 
-运行如下代码以可编辑模式安装记忆模块 (尚未完成 `pyproject.toml` 的依赖配置, 请自行添加依赖):
+注意：`sqlite3` 和 `pathlib` 为 Python 标准库，无需单独安装。若需训练功能，请参考 `training/README.md` 安装训练依赖。
+
+运行如下代码以可编辑模式安装记忆模块:
 
 ```bash
 pip install -e .
 ```
 
-在工作目录或 `~/.config/memory_module/` 中创建一个配置文件 `llm_config.py`，并填写对应的 API 密钥，格式参考 `src/config/llm_config_template.json`, 可以使用如下 Python 脚本查看配置文件的内容。
+在工作目录或 `~/.config/memory_module/` 中创建一个配置文件 `llm_config.json`，并填写对应的 API 密钥，格式参考 `src/memory_module/config/llm_config_template.json`。可以使用如下 Python 脚本查看配置文件模板内容。
 
 ```python
 from memory_module.config.llm_config import llm_config_template

@@ -32,6 +32,7 @@ class MemoryModule:
         session_id: Optional[str] = None,
         data_dir: str = "data",
         log_dir: str = "log",
+        rollout_capture: Optional[List] = None,
     ):
         self.embedding_model = embedding_model
         self.rag_summary_model = rag_summary_model
@@ -81,6 +82,7 @@ class MemoryModule:
             general_model=consolidator_model_content,
         )
         self._step_id = step_id
+        self._rollout_capture = rollout_capture
 
     def __repr__(self) -> str:
         return f"<MemoryModule with {len(self.memory_bank)} items>"
@@ -177,20 +179,20 @@ class MemoryModule:
                 segment_length = int(max_tokens_for_raw_text / obs_text_token_number * string_length)
                 overlap = 1000
                 if segment_length <= overlap:
-                    overlap = segment_length / 10
+                    overlap = max(2, int(segment_length / 10))
                     if overlap % 2 != 0:
                         overlap += 1
                 segment_count = math.ceil(string_length / (segment_length - overlap))
                 for i in range(segment_count):
                     # 为防止最后一段过短, 最后两段平均分
                     if i < segment_count - 2:
-                        segment_start = i * (segment_length - overlap)
-                        segment_end = segment_start + segment_length
+                        segment_start = int(i * (segment_length - overlap))
+                        segment_end = int(segment_start + segment_length)
                     elif i == segment_count - 2:
-                        segment_start = i * (segment_length - overlap)
-                        segment_end = int((segment_start + string_length) / 2) + overlap / 2
+                        segment_start = int(i * (segment_length - overlap))
+                        segment_end = int((segment_start + string_length) / 2) + int(overlap / 2)
                     else:
-                        segment_start = int(((i - 1) * (segment_length - overlap) + string_length) / 2) - overlap / 2
+                        segment_start = int(((i - 1) * (segment_length - overlap) + string_length) / 2) - int(overlap / 2)
                         segment_end = string_length
                     segmented_obses.append({
                         "obs_type": obs["obs_type"],
@@ -298,6 +300,14 @@ class MemoryModule:
                 retrieved_memories=retrieved_memories_1_slice,
             )
             decisions_total.extend(decisions)
+            if self._rollout_capture is not None:
+                self._rollout_capture.append({
+                    "task": "maintainer",
+                    "context": context,
+                    "obs": obs,
+                    "retrieved_memories": retrieved_memories_1_slice,
+                    "teacher_output": decisions,
+                })
 
             # 执行记忆维护操作
             for decision in decisions:
@@ -334,11 +344,26 @@ class MemoryModule:
         filtered_memories_total = []
         for retrieved_memories_2_slice in retrieved_memories_2_slices:
             # 筛选记忆
-            filtered_memories = self.memory_consolidator.filter_memory(
-                context=context,
-                obs=obs,
-                retrieved_memories=retrieved_memories_2_slice,
-            )
+            if self._rollout_capture is not None:
+                filtered_memories, raw_policy = self.memory_consolidator.filter_memory(
+                    context=context,
+                    obs=obs,
+                    retrieved_memories=retrieved_memories_2_slice,
+                    return_raw_policy=True,
+                )
+                self._rollout_capture.append({
+                    "task": "consolidator",
+                    "context": context,
+                    "obs": obs,
+                    "retrieved_memories": retrieved_memories_2_slice,
+                    "teacher_output": raw_policy,
+                })
+            else:
+                filtered_memories = self.memory_consolidator.filter_memory(
+                    context=context,
+                    obs=obs,
+                    retrieved_memories=retrieved_memories_2_slice,
+                )
             filtered_memories_total.extend(filtered_memories)
 
         filtered_memories_slices = self._slice_by_threshold(
